@@ -1,0 +1,16 @@
+R"JSON(
+{
+  "gui_handle": "ESP32-sync-client",
+  "float_number": "2",
+  "settings": [
+    {
+      "gui_handle": "Sample Rate(just a guesstimate)",
+      "microcontroller_handle": "sample_rate_hz",
+      "type": "combo",
+      "datatype": "uint32",
+      "default": 1000,
+      "options": [1000]
+    }
+     ]
+}
+)JSON";

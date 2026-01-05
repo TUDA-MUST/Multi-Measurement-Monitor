@@ -1,0 +1,22 @@
+{
+  "duration_seconds": 300,
+  "float_test": 1.67,
+  "char_test": "this isn't for real anymore",
+  "sample_rate_hz": -1000,
+  "chan1_preamp_gain": "sdf", 
+  "chan1_settings_reg": "10",
+  "chan2_preamp_gain": 356, 
+  "chan2_settings_reg": "10",
+  "chan3_preamp_gain": 1, 
+  "chan3_settings_reg": "10",
+  "chan4_preamp_gain": 1, 
+  "chan4_settings_reg": "10",
+  "chan5_preamp_gain": 1, 
+  "chan5_settings_reg": "10",
+  "chan6_preamp_gain": 1, 
+  "chan6_settings_reg": "10",
+  "chan7_preamp_gain": 1, 
+  "chan7_settings_reg": "10",
+  "chan8_preamp_gain": 1, 
+  "chan8_settings_reg": "10"
+}

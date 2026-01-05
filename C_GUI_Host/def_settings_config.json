@@ -1,0 +1,134 @@
+{
+  "gui_handle": "ESP32-default",
+  "float_number": "9",
+  "settings": [
+    {
+      "gui_handle": "Sample Rate",
+      "microcontroller_handle": "sample_rate_hz",
+      "type": "combo",
+      "datatype": "uint32",
+      "default": 1000,
+      "options": [1000, 2000, 4000]
+    },
+    {
+      "gui_handle": "CHAN1 Preamp",
+      "microcontroller_handle": "chan1_preamp_gain",
+      "type": "combo",
+      "datatype": "uint8",
+      "default": 1,
+      "options": [1, 2, 4, 8, 12]
+    },
+    {
+      "gui_handle": "CHAN1 Settings Register (hex byte)",
+      "microcontroller_handle": "chan1_settings_reg",
+      "type": "entry",
+      "datatype": "uint8_hex",
+      "default": "10"
+    },
+    {
+      "gui_handle": "CHAN2 Preamp",
+      "microcontroller_handle": "chan2_preamp_gain",
+      "type": "combo",
+      "datatype": "uint8",
+      "default": 1,
+      "options": [1, 2, 4, 8, 12]
+    },
+    {
+      "gui_handle": "CHAN2 Settings Register (hex byte)",
+      "microcontroller_handle": "chan2_settings_reg",
+      "type": "entry",
+      "datatype": "uint8_hex",
+      "default": "10"
+    },
+    {
+      "gui_handle": "CHAN3 Preamp",
+      "microcontroller_handle": "chan3_preamp_gain",
+      "type": "combo",
+      "datatype": "uint8",
+      "default": 1,
+      "options": [1, 2, 4, 8, 12]
+    },
+    {
+      "gui_handle": "CHAN3 Settings Register (hex byte)",
+      "microcontroller_handle": "chan3_settings_reg",
+      "type": "entry",
+      "datatype": "uint8_hex",
+      "default": "10"
+    },
+    {
+      "gui_handle": "CHAN4 Preamp",
+      "microcontroller_handle": "chan4_preamp_gain",
+      "type": "combo",
+      "datatype": "uint8",
+      "default": 1,
+      "options": [1, 2, 4, 8, 12]
+    },
+    {
+      "gui_handle": "CHAN4 Settings Register (hex byte)",
+      "microcontroller_handle": "chan4_settings_reg",
+      "type": "entry",
+      "datatype": "uint8_hex",
+      "default": "10"
+    },
+    {
+      "gui_handle": "CHAN5 Preamp",
+      "microcontroller_handle": "chan5_preamp_gain",
+      "type": "combo",
+      "datatype": "uint8",
+      "default": 1,
+      "options": [1, 2, 4, 8, 12]
+    },
+    {
+      "gui_handle": "CHAN5 Settings Register (hex byte)",
+      "microcontroller_handle": "chan5_settings_reg",
+      "type": "entry",
+      "datatype": "uint8_hex",
+      "default": "10"
+    },
+    {
+      "gui_handle": "CHAN6 Preamp",
+      "microcontroller_handle": "chan6_preamp_gain",
+      "type": "combo",
+      "datatype": "uint8",
+      "default": 1,
+      "options": [1, 2, 4, 8, 12]
+    },
+    {
+      "gui_handle": "CHAN6 Settings Register (hex byte)",
+      "microcontroller_handle": "chan6_settings_reg",
+      "type": "entry",
+      "datatype": "uint8_hex",
+      "default": "10"
+    },
+    {
+      "gui_handle": "CHAN7 Preamp",
+      "microcontroller_handle": "chan7_preamp_gain",
+      "type": "combo",
+      "datatype": "uint8",
+      "default": 1,
+      "options": [1, 2, 4, 8, 12]
+    },
+    {
+      "gui_handle": "CHAN7 Settings Register (hex byte)",
+      "microcontroller_handle": "chan7_settings_reg",
+      "type": "entry",
+      "datatype": "uint8_hex",
+      "default": "10"
+    },
+    {
+      "gui_handle": "CHAN8 Preamp",
+      "microcontroller_handle": "chan8_preamp_gain",
+      "type": "combo",
+      "datatype": "uint8",
+      "default": 1,
+      "options": [1, 2, 4, 8, 12]
+    },
+    {
+      "gui_handle": "CHAN8 Settings Register (hex byte)",
+      "microcontroller_handle": "chan8_settings_reg",
+      "type": "entry",
+      "datatype": "uint8_hex",
+      "default": "10"
+    }
+  ]
+}
