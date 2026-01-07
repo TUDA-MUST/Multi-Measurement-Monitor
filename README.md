@@ -56,7 +56,7 @@ Before starting the application:
 - **Linux:**  
   Messages are only visible when starting MMM from a terminal.
 
-This output also confirms whether MMM detected the correct IP address within the hotspot network.
+This output also confirms whether MMM detected the correct IP address within the hotspot network for broadcasting.
 
 ---
 
@@ -77,12 +77,12 @@ The **Main Tab** allows you to:
 
 Each connected client is assigned its own tab. The tab color indicates its status:
 
-- <span style="color:green">**GREEN**</span>: client connected and ready
-- <span style="color:blue">**BLUE**</span>: measurement ongoing
-- <span style="color:red">**RED**</span>: client disconnected, no data collected
-- <span style="color:orange">**ORANGE**</span>: client disconnected, measurement finished, data available
+- 🟢 **GREEN**: client connected and ready
+- 🔵 **BLUE**: measurement ongoing
+- 🔴 **RED**: client disconnected, no data collected
+- 🟠 **ORANGE**: client disconnected, measurement finished, data available
 
- 
+
 
 ---
 
@@ -122,14 +122,14 @@ Client-side interaction is largely handled by the provided Arduino library:
 1. Call `discoverHostUDP()` to find the MMM host via UDP broadcast  
 2. Call `connectToHost()` to connect on **TCP port 8080**  
 3. Call `sendHandshakePackage()` with a settings-config JSON  
-4. Wait for settings, apply them, then start measuring  
-   (see `SyncClient`)  
+4. Wait for settings, apply them, then start measuring   
 5. Send data and handle incoming packages:
    - Discard `PING` packages
    - Echo `TIMESTAMP` packages with local time in µs (`float`) appended
    - Stop measuring on `STOP` packages
 6. Reset the connection after measurement completion
 
+Read through the `SyncClient` example for further explanation.
 ---
 
 ## 🔌 Interfaces and Configurations
