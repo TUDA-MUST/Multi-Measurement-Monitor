@@ -1,3 +1,343 @@
+# Multi-Measurement-Monitor (MMM)
+
+[![Built with GTK](https://img.shields.io/badge/Built%20w%2F-GTK3.0+-blue)](https://www.gtk.org/)
+
+The **Multi-Measurement-Monitor (MMM)** is a simple-to-use monitoring and synchronization application that allows various clients (microcontrollers or PCs) to configure, perform, and record measurements through a unified interface.
+
+---
+
+## ✨ Key Features
+
+- System-agnostic **TCP interface** for microcontrollers and PCs  
+- Clients can dynamically request **GUI configuration interfaces**  
+- **Timestamp synchronization** across all clients  
+- **Live monitoring** of measurement channels  
+
+---
+
+## 📊 Time Synchronization Example
+
+![Time Synchronization](/src/sync.png)
+
+Drift of raw local times of ESP32-S3 sync clients recording a 50 Hz digital signal after two hours  
+(left) vs. synchronized global time through MMM (right).
+
+---
+
+## 🚀 First Steps
+
+### Installation
+
+To use MMM, download the working binaries or compile the project for your target platform.
+
+**Tested binaries:**
+- **Ubuntu 24.04:**  
+  `/C_GUI_Host/MultiMeasurementMonitor`
+- **Windows 10:**  
+  `/C_GUI_Host/WinApp/bin/MultiMeasurementMonitor.exe`  
+  > Requires the dependencies located in the `WinApp` directory
+
+---
+
+### Network Setup
+
+Before starting the application:
+
+1. Create a **Wi-Fi hotspot** that clients can connect to.
+2. MMM will periodically broadcast a UDP message containing  
+   `"SERVER_ALIVE"` to make itself detectable by clients.
+
+---
+
+### Running the Application
+
+- **Windows:**  
+  A terminal opens alongside the main window, displaying warnings, errors, and system messages.
+- **Linux:**  
+  Messages are only visible when starting MMM from a terminal.
+
+This output also confirms whether MMM detected the correct IP address within the hotspot network.
+
+---
+
+## 🖥️ Main Interface Overview
+
+The **Main Tab** allows you to:
+
+- Start / stop all connected clients
+- Set the **GlobalDuration** of measurements  
+  > MMM preallocates all samples for this time window  
+  > `Max samples = GlobalDuration × client sample rate`
+
+![Main Tab](/src/Main_tab.png)
+
+---
+
+### Client Tabs & Status Colors
+
+Each connected client is assigned its own tab. The tab color indicates its status:
+
+- <span style="color:green">**GREEN**</span>: client connected and ready
+- <span style="color:blue">**BLUE**</span>: measurement ongoing
+- <span style="color:red">**RED**</span>: client disconnected, no data collected
+- <span style="color:orange">**ORANGE**</span>: client disconnected, measurement finished, data available
+
+ 
+
+---
+
+## 🧪 Performing a Measurement
+
+Once connected, each client tab contains:
+
+- **Left panel:** Client-specific settings  
+- **Center:** Live monitor  
+- **Right panel:** Standard actions  
+
+Available actions:
+- Individual **Start / Stop**
+- **Load JSON Settings**
+- Use default or modified settings
+- **Export measurement data** as `.csv`
+
+![Client Tab](/src/sync_client.png)
+
+
+**Data expectations:**
+- Measurement values: `float`
+- Timestamps: microseconds (`float`)
+
+
+---
+
+## 🔧 Setting Up Clients
+
+Client-side interaction is largely handled by the provided Arduino library:
+
+/lib/tcp_client_network.h
+
+
+### Required Client Workflow
+
+1. Call `discoverHostUDP()` to find the MMM host via UDP broadcast  
+2. Call `connectToHost()` to connect on **TCP port 8080**  
+3. Call `sendHandshakePackage()` with a settings-config JSON  
+4. Wait for settings, apply them, then start measuring  
+   (see `SyncClient`)  
+5. Send data and handle incoming packages:
+   - Discard `PING` packages
+   - Echo `TIMESTAMP` packages with local time in µs (`float`) appended
+   - Stop measuring on `STOP` packages
+6. Reset the connection after measurement completion
+
+---
+
+## 🔌 Interfaces and Configurations
+
+### 📄 JSON Files
+
+Two types of JSON files are used:
+
+#### 1. Handshake Configuration (Client → MMM)
+
+Sent as payload of the `HANDSHAKE` package. Contains:
+
+- `gui_handle` – Client name in GUI and CSV exports  
+- `float_number` – Number of floats per sample  
+  > Includes timestamp (e.g. `4 = 3 channels + 1 timestamp`)  
+- `settings` – Array describing GUI settings
+
+#### 2. Settings JSON (MMM → Client)
+
+Used when:
+- Clicking **Load JSON Settings…**
+- Sending a `SETTINGS` package from MMM to client to start a measurement
+
+Contains:
+- `microcontroller_handle : value` pairs
+
+📁 Examples: `/json_examples/`
+
+---
+
+### ⚙️ Settings Configuration
+
+Each setting is one of two types:
+
+- **combo** – Dropdown with selectable options  
+- **entry** – Free-form input field  
+
+#### Required Fields
+
+- `gui_handle` – Label shown in MMM GUI  
+- `microcontroller_handle` – Internal identifier  
+- `type` – `combo` or `entry`  
+- `datatype` – Data type of the setting  
+- `default` – Default value  
+- `options` – Required only for `combo`, array of options for dropdown menu  
+
+#### Supported Datatypes
+
+- `uint8`
+- `uint8_hex` (displayed as hex, e.g. registers)
+- `uint32`
+- `uint64`
+- `int32`
+- `char[256]`
+- `float`
+
+⚠️ **Mandatory setting:**  
+A numerical setting with the microcontroller handle  
+`sample_rate_hz` is required to allocate buffers and start measuring.
+
+---
+
+## 📤 CSV Export Format
+
+Exported `.csv` files follow a fixed structure:
+
+1. Client name and timestamp of export 
+2. Timestamp synchronization-echo log  
+3. Header row:
+   - `CHAN1 … CHANX`
+   - `LOCAL_TIME`
+   - `GLOBAL_TIME`
+4. Measurement data until EOF  
+
+### Example
+
+ESP_black - 2025-12-10 17:10:34 UTC
+
+Sent Timesync request at 2025-12-10 16:50:42.046 UTC, received echo at 2025-12-10 16:50:42.071 UTC, local time 21855958,0
+
+Sent Timesync request at 2025-12-10 16:50:47.042 UTC, received echo at 2025-12-10 16:50:47.066 UTC, local time 26850960,0
+
+CHAN1;LOCAL_TIME;GLOBAL_TIME
+
+150,695969;17264514,000000;2025-12-10 16:50:37.468385 UTC
+
+153,113556;17265606,000000;2025-12-10 16:50:37.469477 UTC
+
+
+
+---
+
+## 📡 TCP Packages
+
+
+Communication between the MMM host and its clients is performed using custom TCP packages.
+Each package follows a fixed binary layout.
+
+---
+
+### General Package Layout
+
+Every TCP package is sent in the following order:
+
+1. **package_type** (`uint8`)  
+   Identifies the type of the package.
+
+2. **package_size** (`uint32`)  
+   Size of the payload in bytes (payload only, header excluded).
+
+3. **package payload** (`unsigned char *`)  
+   Raw payload data whose structure depends on the package type.
+
+
+### Package Types
+
+
+PING_PACKAGE (0)
+- Direction: MMM -> Client
+- Purpose: Keep-alive probing
+- Payload: None (16-bytes zeroed)
+- Client behavior:
+  Discard the package.
+
+---
+
+STOP_PACKAGE (1)
+- Direction: MMM -> Client
+- Purpose: Stop an active measurement
+- Payload: None
+- Client behavior:
+  - Stop sampling immediately
+  - Finalize measurement
+  - Prepare for connection reset
+
+---
+
+SETTINGS_PACKAGE (2)
+- Direction: MMM -> Client
+- Purpose: Transfer measurement settings and start a measurement
+- Payload type: JSON encoded settings values
+- Payload content:
+  Plain settings JSON containing key–value pairs of the form:
+
+  microcontroller_handle : value
+
+- Client behavior:
+  - Parse the JSON
+  - Apply all received settings
+  - Start measuring
+
+---
+
+DATA_PACKAGE (3)
+- Direction: Client -> MMM
+- Purpose: Transfer measurement samples
+- Payload type: single or multiple binary float arrays
+- Payload layout:
+
+  value_1, value_2, ..., value_N
+
+  value_1, value_2, ..., value_N 
+
+  ...
+
+  where:
+  - All values are of type float
+  - The last value is always the local timestamp in microseconds
+  - N must match the float_number specified in the handshake
+
+- MMM behavior:
+  Samples are written into a preallocated measurement buffer.
+
+---
+
+TIMESTAMP_PACKAGE (4)
+- Direction: MMM -> Client -> MMM (echo)
+- Purpose: Time synchronization
+- Payload (MMM -> Client): binary timestamp of MMM
+- Payload (Client -> MMM):
+  Single float representing the client’s local time in microseconds appended to binary timestamp of MMM
+- Client behavior:
+  - Append local timestamp
+  - Echo the package back to the MMM
+
+- MMM usage:
+  Timestamp echos are used to compute a global time model and compensate clock drift.
+
+---
+
+HANDSHAKE_PACKAGE (5)
+- Direction: Client -> MMM
+- Purpose: Initial client registration
+- Payload type: JSON encoded settings config
+- Payload content:
+  - GUI handle and metadata
+  - Number of floats per sample
+  - Settings configuration description
+
+- MMM behavior:
+  - Creates a new client tab
+  - Builds the settings UI
+
+
+---
+
+<!--
+
 # Multi-Measurement-Monitor
 
 [![Badge](https://img.shields.io/badge/Built%20w%2F-GTK3.0+-blue)](https://www.gtk.org/)
@@ -142,3 +482,6 @@ typedef struct {
 
 
 ---
+
+
+-->
