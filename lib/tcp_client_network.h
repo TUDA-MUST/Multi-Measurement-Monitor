@@ -44,7 +44,7 @@ bool getNextTcpPackage(WiFiClient &client, TcpPackage &pkg);
 
 bool wifiConnectAndAllowOverride(String &clientNameOut);
 IPAddress discoverHostUDP();
-WiFiClient connectToHost(IPAddress host, int port);
+WiFiClient connectToHost(IPAddress host, int port = 8080);
 
 
 #endif
