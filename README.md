@@ -5,10 +5,13 @@
 
 The Multi-Measurement-Monitor (MMM) provides a simple to use program for various clients to setup and record a measurement. Highlights are
 
-- systemagnostic TCP interface (microcontrollers or PC) for Clients
-- client can dynamically request GUI interface to configure settings 
+- systemagnostic TCP interface (microcontrollers or PC) for clients
+- clients can dynamically request GUI interface to configure settings 
 - synchronisation of client times up to xxx
 - live monitoring of channels
+
+![Chain](/src/sync.png)
+Drift of of raw local times of ESP32-S3 sync clients recording digital singals after two hours (left) vs synchronized global time through MMM (right).
 
 ## First steps
 
@@ -20,6 +23,8 @@ After starting the application on Windows a terminal will open in addtion to the
 
 The main tab provides the options to start/ stop all Clients currently connected to the monitor. It furthers enables the user to set the GlobalDuration of Measurements, as the application preallocates all samples for that time window (max. recorded #samples = GlobalDuration * sample rate of client).
 
+![Chain](/src/Main_tab.png)
+
 Upon connecting a client will be assigned a new tab with the settings configured to its specifications. The name of the tab is colour coded to:
 - GREEN: client connected and ready
 - BLUE: measurement ongoing
@@ -30,7 +35,7 @@ Upon connecting a client will be assigned a new tab with the settings configured
 
 ## Perorming a mesurement
 
-
+![Chain](/src/sync_client.png)
 
 ---
 
