@@ -12,7 +12,7 @@ Preferences prefs;
 #define NUM_LEDS 2
 #define DATA_PIN 21
 
-#define ADC_PIN 1        // <<<<<< acquire from this analog pin
+#define ADC_PIN 2        // <<<<<< acquire from this analog pin
 
 #define BUFFERSIZE 16
 #define SAMPLE_SIZE_BYTES 8      // float value + float timestamp
