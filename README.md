@@ -43,9 +43,10 @@ To use MMM, download the working binaries or compile the project for your target
 
 Before starting the application:
 
-1. Create a **Wi-Fi hotspot** that clients can connect to.
+1. Create or connect to a **Wi-Fi hotspot** that clients can connect to.
 2. MMM will periodically broadcast a UDP message containing  
    `"SERVER_ALIVE"` to make itself detectable by clients.
+3. Through the broadcast clients can obtain the host IP and connect to the MMM under TCP Port 8080 via a Handshake package.
 
 ---
 
@@ -130,6 +131,9 @@ Client-side interaction is largely handled by the provided Arduino library:
 6. Reset the connection after measurement completion
 
 Read through the `SyncClient` example for further explanation.
+
+The lib, as well as the SyncClient example are both written in the Arduino IDE for an ESP32-S3 using 2.4GHz WiFi to connect to a Hotspot running the MMM.
+
 ---
 
 ## 🔌 Interfaces and Configurations

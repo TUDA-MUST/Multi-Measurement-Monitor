@@ -531,7 +531,7 @@ gboolean on_client_incoming(GSocketService *service,
     //GOutputStream *out = g_io_stream_get_output_stream(G_IO_STREAM(conn));
     //uint8_t ack = 0;
     //g_output_stream_write(out, &ack, 1, NULL, NULL);
-    // --- Send empty STOP_PACKAGE ---
+    // --- Send empty PING_PACKAGE ---
     pkg.package_type = PING_PACKAGE;
     pkg.package_size = 0;
     pkg.package = NULL;
