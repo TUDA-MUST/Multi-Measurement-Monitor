@@ -209,7 +209,7 @@ Exported `.csv` files follow a fixed structure:
 4. Measurement data until EOF  
 
 ### Example
-
+```
 ESP_black - 2025-12-10 17:10:34 UTC
 
 Sent Timesync request at 2025-12-10 16:50:42.046 UTC, received echo at 2025-12-10 16:50:42.071 UTC, local time 21855958,0
@@ -221,7 +221,7 @@ CHAN1;LOCAL_TIME;GLOBAL_TIME
 150,695969;17264514,000000;2025-12-10 16:50:37.468385 UTC
 
 153,113556;17265606,000000;2025-12-10 16:50:37.469477 UTC
-
+```
 
 
 ---
