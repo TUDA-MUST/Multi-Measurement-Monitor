@@ -32,9 +32,9 @@ To use MMM, download the working binaries or compile the project for your target
 
 **Tested binaries:**
 - **Ubuntu 24.04:**  
-  `/C_GUI_Host/MultiMeasurementMonitor`
+  [`/C_GUI_Host/MultiMeasurementMonitor`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/tree/main/C_GUI_Host)
 - **Windows 10:**  
-  `/C_GUI_Host/WinApp/bin/MultiMeasurementMonitor.exe`  
+  [`/C_GUI_Host/WinApp/bin/MultiMeasurementMonitor.exe`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/tree/main/C_GUI_Host/WinApp/bin) 
   > Requires the dependencies located in the `WinApp` directory
 
 ---
@@ -66,7 +66,7 @@ This output also confirms whether MMM detected the correct IP address within the
 The **Main Tab** allows you to:
 
 - Start / stop all connected clients
-- Set the **GlobalDuration** of measurements  
+- Set the `GlobalDuration` of measurements  
   > MMM preallocates all samples for this time window  
   > `Max samples = GlobalDuration × client sample rate`
 
@@ -115,7 +115,7 @@ Available actions:
 
 Client-side interaction is largely handled by the provided Arduino library:
 
-/lib/tcp_client_network.h
+[`/lib/tcp_client_network.h`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/tree/main/lib)
 
 
 ### Required Client Workflow
