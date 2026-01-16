@@ -26,13 +26,12 @@ gboolean read_tcp_package(GSocket *sock, TcpPackage *pkg, guint32 timeout_ms) {
 
     guint8 header[5]; // 1 byte type + 4 bytes size
     if (!read_bytes(sock, header, sizeof(header), timeout_ms)) return FALSE;
-
     pkg->package_type = header[0];
     pkg->package_size = (uint32_t)header[1] << 24 |
                         (uint32_t)header[2] << 16 |
                         (uint32_t)header[3] << 8 |
                         (uint32_t)header[4];
-
+    //printf("read_bytes() in read_tcp_package succesfull with package_type  %d and length %d", pkg->package_type, pkg->package_size);
     if (pkg->package_size > 0) {
         pkg->package = g_malloc(pkg->package_size);
         if (!pkg->package) return FALSE;
@@ -79,6 +78,7 @@ void free_tcp_package(TcpPackage *pkg) {
 // ---------------- Getter: next TCP package ----------------
 gboolean get_next_tcp_package(GSocket *sock, TcpPackage *pkg, guint32 timeout_ms) {
     if (!sock || !pkg) return FALSE;
+    //printf("Socket found, packet found, trying to read package in get_next_tcp_package().\n");
     return read_tcp_package(sock, pkg, timeout_ms);
 }
 
@@ -121,7 +121,10 @@ static gboolean read_bytes(GSocket *sock, guint8 *buffer, gsize n, guint32 timeo
         // Timeout check
         gint64 now = g_get_real_time();
         gint64 elapsed_us = now - start_time;
-        if (elapsed_us > timeout_ms*1000) return FALSE;
+        if (elapsed_us > timeout_ms*1000) {
+            g_warning("read_bytes skipping after timeout, can't guarantee data integrity at this point!");
+            return FALSE;
+        }
     }
 
     return TRUE;

@@ -141,6 +141,13 @@ void build_client_ui(ClientInfo *info, GtkWidget *win)
   g_signal_connect(export_btn, "clicked", G_CALLBACK(on_export_csv_clicked), info);
   g_object_set_data(G_OBJECT(info->tab_content), "export_btn", export_btn);
 
+
+  //connection status label
+  GtkWidget *status_label = gtk_label_new("DISCONNECTED");
+  gtk_box_pack_start(GTK_BOX(right_box), status_label, FALSE, FALSE, 5);
+  info->status_label = status_label;
+
+
   // --- Y-axis Range Controls ---
   GtkWidget *ymax_label = gtk_label_new("Y-Max for Live Plot");
   GtkWidget *ymax_entry = gtk_entry_new();
@@ -160,11 +167,30 @@ void build_client_ui(ClientInfo *info, GtkWidget *win)
   gtk_box_pack_start(GTK_BOX(right_box), ymin_entry, FALSE, FALSE, 3);
 
   
+  // --- Channel Tick-boxes ---
+  if (info->settings && *(info->settings->float_number) > 1) {
+      guint num_chans = *(info->settings->float_number) - 1;
+      GtkWidget *chan_label = gtk_label_new("Select Plotted Channels:");
+      gtk_box_pack_start(GTK_BOX(right_box), chan_label, FALSE, FALSE, 5);
+  
+      // Allocate array for checkbuttons
+      GtkWidget **chan_checkbuttons = g_new0(GtkWidget*, num_chans);
+      for (guint i = 0; i < num_chans; i++) {
+          char buf[16];
+          snprintf(buf, sizeof(buf), "CHAN%u", i + 1);
+          chan_checkbuttons[i] = gtk_check_button_new_with_label(buf);
 
-  //connection status label
-  GtkWidget *status_label = gtk_label_new("DISCONNECTED");
-  gtk_box_pack_end(GTK_BOX(right_box), status_label, FALSE, FALSE, 5);
-  info->status_label = status_label;
+          // Initialize checked
+          gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chan_checkbuttons[i]), TRUE);
+
+          gtk_box_pack_start(GTK_BOX(right_box), chan_checkbuttons[i], FALSE, FALSE, 3);
+      }
+
+      // Store array for later access
+      g_object_set_data(G_OBJECT(info->tab_content), "chan_checkbuttons", chan_checkbuttons);
+      g_object_set_data(G_OBJECT(info->tab_content), "num_chans", GINT_TO_POINTER(num_chans));
+  }
+
 
 }
 
@@ -1058,7 +1084,14 @@ static gboolean on_plot_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data)
     };
 
     /* === DRAW CHANNELS === */
+    GtkWidget **chan_checkbuttons = g_object_get_data(G_OBJECT(tab), "chan_checkbuttons");
     for (int ch = 0; ch < (*info->settings->float_number)-1; ch++) {
+
+        // Skip channels with unchecked boxes
+        if (!chan_checkbuttons || !gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(chan_checkbuttons[ch]))) {
+            continue;
+        }
+
         uint8_t ch_clr = ch%8;
         cairo_set_source_rgb(cr, colors[ch_clr][0], colors[ch_clr][1], colors[ch_clr][2]);
         cairo_set_line_width(cr, 1.2);
@@ -1212,7 +1245,7 @@ static gpointer measurement_thread_func(gpointer user_data) {
 
         // --- 2. Receive incoming packages ---
         TcpPackage pkg;
-        gboolean ok = get_next_tcp_package(sock, &pkg, 150); // 150ms timeout
+        gboolean ok = get_next_tcp_package(sock, &pkg, 800); // 800ms timeout
         if (!ok) {
             g_usleep(2000); // avoid busy loop
             continue;
@@ -1220,9 +1253,10 @@ static gpointer measurement_thread_func(gpointer user_data) {
 
         if (pkg.package_type == DATA_PACKAGE && pkg.package_size > 0) {
             // Handle measurement data
+            //printf("Recieved DATA_PACKAGE in measurement thread!\n");
             size_t row_size = (*info->settings->float_number) * sizeof(float);
             size_t n_rows = pkg.package_size / row_size;
-
+            //printf("Will be saving %ld rows of size %ld.\n", n_rows, row_size);
             if (info->write_index + n_rows > info->allocated_samples) {
                 g_warning("Measurement buffer full. Stopping measurement.");
                 info->measurement_active = FALSE;
