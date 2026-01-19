@@ -1,0 +1,2 @@
+FSR_MMM_Integration: reads out 1 ADC from FSR PCB from Julian Seiler
+Sync_Client: reads out 1 digital pin, can be used to sync with other pulse sources 

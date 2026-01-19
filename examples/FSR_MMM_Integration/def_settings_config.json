@@ -1,0 +1,129 @@
+R"JSON(
+{
+  "gui_handle": "ESP32-FSR1-client",
+  "float_number": "6",
+  "settings": [
+    {
+      "gui_handle": "Sample Rate",
+      "microcontroller_handle": "sample_rate_hz",
+      "type": "combo",
+      "datatype": "uint32",
+      "default": 1000,
+      "options": [
+        20,
+        45,
+        90,
+        175,
+        330,
+        600,
+        1000
+      ]
+    },
+    {
+      "gui_handle": "Input Multiplexer",
+      "microcontroller_handle": "mux",
+      "type": "combo",
+      "datatype": "char[256]",
+      "default": "MUX_AIN0_AIN1",
+      "options": [
+        "MUX_AIN0_AIN1",
+        "MUX_AIN0_AIN2",
+        "MUX_AIN0_AIN3",
+        "MUX_AIN1_AIN0",
+        "MUX_AIN1_AIN2",
+        "MUX_AIN1_AIN3",
+        "MUX_AIN2_AIN3",
+        "MUX_AIN3_AIN2",
+        "MUX_AIN0_AVSS",
+        "MUX_AIN1_AVSS",
+        "MUX_AIN2_AVSS",
+        "MUX_AIN3_AVSS",
+        "MUX_REF",
+        "MUX_AVDD",
+        "MUX_SHORTED"
+      ]
+    },
+    {
+      "gui_handle": "Gain",
+      "microcontroller_handle": "gain",
+      "type": "combo",
+      "datatype": "char[256]",
+      "default": "GAIN_1",
+      "options": [
+        "GAIN_1",
+        "GAIN_2",
+        "GAIN_4",
+        "GAIN_8",
+        "GAIN_16",
+        "GAIN_32",
+        "GAIN_64",
+        "GAIN_128"
+      ]
+    },
+    {
+      "gui_handle": "Voltage Reference",
+      "microcontroller_handle": "vref",
+      "type": "combo",
+      "datatype": "char[256]",
+      "default": "VREF_INTERNAL",
+      "options": [
+        "VREF_INTERNAL",
+        "VREF_EXTERNAL",
+        "VREF_AVDD"
+      ]
+    },
+    {
+      "gui_handle": "IDAC Current",
+      "microcontroller_handle": "idac_current",
+      "type": "combo",
+      "datatype": "char[256]",
+      "default": "IDAC_OFF",
+      "options": [
+        "IDAC_OFF",
+        "IDAC_10UA",
+        "IDAC_50UA",
+        "IDAC_100UA",
+        "IDAC_250UA",
+        "IDAC_500UA",
+        "IDAC_1000UA",
+        "IDAC_1500UA"
+      ]
+    },
+    {
+      "gui_handle": "IDAC Routing",
+      "microcontroller_handle": "idac_route",
+      "type": "combo",
+      "datatype": "char[256]",
+      "default": "IDAC_DISABLED",
+      "options": [
+        "IDAC_DISABLED",
+        "IDAC_AIN0",
+        "IDAC_AIN1",
+        "IDAC_AIN2",
+        "IDAC_AIN3",
+        "IDAC_REFP",
+        "IDAC_REFN"
+      ]
+    },
+    {
+      "gui_handle": "CRC Mode",
+      "microcontroller_handle": "crc_mode",
+      "type": "combo",
+      "datatype": "char[256]",
+      "default": "CRC_OFF",
+      "options": [
+        "CRC_OFF",
+        "CRC_INVERTED",
+        "CRC_CRC16"
+      ]
+    },
+    {
+      "gui_handle": "VREF DAC [V]",
+      "microcontroller_handle": "vref_dac",
+      "type": "entry",
+      "datatype": "float",
+      "default": 0.3
+    }    
+  ]    
+}
+)JSON";
