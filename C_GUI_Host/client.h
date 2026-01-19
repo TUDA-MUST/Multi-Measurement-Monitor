@@ -39,7 +39,7 @@ typedef struct _ClientInfo{
     ClientTime *client_time_sync;   // Buffer of collected client time synchronisation data
     uint64_t allocated_client_times;// number of allocated ClientTime structs
     uint64_t time_write_index;      // For client_time_sync entries
-    float *measurement_data;        // Contiguous buffer: rows of 9 floats
+    float *measurement_data;        // Contiguous buffer: rows of n floats
     uint64_t allocated_samples;     // Allocated number of rows
     uint64_t write_index;           // Current row index
     gboolean measurement_active;    // TRUE after Start, FALSE after stop/end
