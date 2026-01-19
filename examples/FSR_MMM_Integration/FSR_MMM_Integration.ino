@@ -4,7 +4,7 @@
 #include <ArduinoJson.h>
 #include <MCP4725.h>
 #include "./lib/ADS122C04.cpp"
-#include "./lib/tcp_client_network.cpp"
+#include "../../lib/tcp_client_network.cpp"
 
 Preferences prefs;
 

@@ -2,6 +2,8 @@
 #include <SPI.h>
 #include <pgmspace.h>
 #include <ArduinoJson.h>
+#include <HardwareSerial.h>
+#include <ResenseHEX.h>
 #include "../../lib/tcp_client_network.cpp"
 
 Preferences prefs;
@@ -12,11 +14,17 @@ Preferences prefs;
 #define NUM_LEDS 2
 #define DATA_PIN 21
 
-#define ADC_PIN 2        // <<<<<< acquire from this analog pin
-
-#define BUFFERSIZE 16
-#define SAMPLE_SIZE_BYTES 8      // float value + float timestamp
+#define BUFFERSIZE 30
+#define SAMPLE_SIZE_BYTES 36      // size of Sample struct
 #define DATAQUEUE_SIZE 1024
+
+#ifndef TX_PIN
+#define TX_PIN 43
+#endif
+#ifndef RX_PIN
+#define RX_PIN 44
+#endif
+
 
 const char jsonConfig[] PROGMEM =
 #include "def_settings_config.json"
@@ -24,14 +32,20 @@ const char jsonConfig[] PROGMEM =
 
 CRGB leds[NUM_LEDS];
 
+HardwareSerial HexSerial(1); 
+ResenseHEX hex(HexSerial); 
+HexFrame frame; 
 
 
 // ──────────────────────────────────────────────────────────────
 // STRUCTS
 // ──────────────────────────────────────────────────────────────
 struct Sample {
-    float value;
-    float timestamp;
+    float forces[3];
+    float torques[3];
+    float temperature;
+    float hex_timestamp;
+    float esp_timestamp;
 };
 
 TaskHandle_t aquireTask;
@@ -92,48 +106,6 @@ uint64_t waitAndApplySettings_simple(WiFiClient &client)
 //   ISRs
 //----------------------------------------
 
-void IRAM_ATTR risingWrite_Isr() {
-    // Create and initialize the sample for LOW value (before rising edge)
-    Sample* lowSample = (Sample*) malloc(sizeof(Sample));
-    if (lowSample) {
-        lowSample->value = 0.0f; // Set value to LOW
-        lowSample->timestamp = (float)esp_timer_get_time(); // Get timestamp
-        xQueueSendFromISR(datatransferQueue, &lowSample, NULL);
-    }
-    
-    // Create and initialize the sample for HIGH value (after rising edge)
-    Sample* highSample = (Sample*) malloc(sizeof(Sample));
-    if (highSample) {
-        highSample->value = 1.0f; // Set value to HIGH
-        highSample->timestamp = (float)esp_timer_get_time(); // Get timestamp
-        xQueueSendFromISR(datatransferQueue, &highSample, NULL);
-    }
-}
-
-
-
-
-
-
-void IRAM_ATTR fallingWrite_Isr() {
-    // Create and initialize the sample for HIGH value (before falling edge)
-    Sample* highSample = (Sample*) malloc(sizeof(Sample));
-    if (highSample) {
-        highSample->value = 1.0f; // Set value to HIGH
-        highSample->timestamp = (float)esp_timer_get_time(); // Get timestamp
-        xQueueSendFromISR(datatransferQueue, &highSample, NULL);
-    }
-    
-    // Create and initialize the sample for LOW value (after falling edge)
-    Sample* lowSample = (Sample*) malloc(sizeof(Sample));
-    if (lowSample) {
-        lowSample->value = 0.0f; // Set value to LOW
-        lowSample->timestamp = (float)esp_timer_get_time(); // Get timestamp
-        xQueueSendFromISR(datatransferQueue, &lowSample, NULL);
-    }
-}
-
-
 
 
 
@@ -142,17 +114,26 @@ void IRAM_ATTR fallingWrite_Isr() {
 // continuously capture analog value + timestamp
 // ──────────────────────────────────────────────────────────────
 void aquireTaskCode(void* params) {
-    attachInterrupt(digitalPinToInterrupt(ADC_PIN), risingWrite_Isr, RISING);
-    attachInterrupt(digitalPinToInterrupt(ADC_PIN), fallingWrite_Isr, FALLING);
+    
     while (1) {
-        Sample* s = (Sample*) malloc(sizeof(Sample));
-        if (s) {
-            //int raw = digitalRead(ADC_PIN);  // Digital read (HIGH or LOW)
-            s->value = (float) digitalRead(ADC_PIN); // 1.0 (HIGH) or 0.0 (LOW)
-            s->timestamp = (float)esp_timer_get_time();  // Get timestamp in microseconds
-            xQueueSend(datatransferQueue, &s, 0);
+        if (hex.triggerAndRead(frame)) { 
+            if (hex.validateLimits(frame)) { 
+                Sample* s = (Sample*) malloc(sizeof(Sample));
+                if (s) {
+                    s->forces[0] = frame.fx;
+                    s->forces[1] = frame.fy;
+                    s->forces[2] = frame.fz;
+                    s->torques[0] = frame.mx;
+                    s->torques[1] = frame.my;
+                    s->torques[2] = frame.mz;
+                    s->temperature = frame.temperature;
+                    s->hex_timestamp = (float)frame.timestamp;
+                    s->esp_timestamp = (float)esp_timer_get_time();  // Get timestamp in microseconds
+                    xQueueSend(datatransferQueue, &s, 0);
+                }
+            }
         }
-        vTaskDelay(2);   // adjust sampling speed
+        vTaskDelay(1); 
     }
 }
 
@@ -189,7 +170,7 @@ void sendTaskCode(void* params) {
     leds[0] = CRGB::Green; FastLED.show();
 
     // start acquiring
-    xTaskCreatePinnedToCore(aquireTaskCode, "acq", 4096, NULL, 1, &aquireTask, 1);
+    xTaskCreatePinnedToCore(aquireTaskCode, "acq", 8192, NULL, 1, &aquireTask, 1);
 
     // allocate output buffer
     const int dataSize = SAMPLE_SIZE_BYTES * BUFFERSIZE;
@@ -244,8 +225,15 @@ void sendTaskCode(void* params) {
             Sample* s;
             xQueueReceive(datatransferQueue, &s, portMAX_DELAY);
 
-            memcpy(buffer + j*SAMPLE_SIZE_BYTES, &(s->value), 4);
-            memcpy(buffer + j*SAMPLE_SIZE_BYTES + 4, &(s->timestamp), 4);
+            memcpy(buffer + j*SAMPLE_SIZE_BYTES, &(s->forces[0]), 4);
+            memcpy(buffer + j*SAMPLE_SIZE_BYTES + 4, &(s->forces[1]), 4);
+            memcpy(buffer + j*SAMPLE_SIZE_BYTES + 8, &(s->forces[2]), 4);
+            memcpy(buffer + j*SAMPLE_SIZE_BYTES + 12, &(s->torques[0]), 4);
+            memcpy(buffer + j*SAMPLE_SIZE_BYTES + 16, &(s->torques[1]), 4);
+            memcpy(buffer + j*SAMPLE_SIZE_BYTES + 20, &(s->torques[2]), 4);
+            memcpy(buffer + j*SAMPLE_SIZE_BYTES + 24, &(s->temperature), 4);
+            memcpy(buffer + j*SAMPLE_SIZE_BYTES + 28, &(s->hex_timestamp), 4);
+            memcpy(buffer + j*SAMPLE_SIZE_BYTES + 32, &(s->esp_timestamp), 4);
 
             free(s);
         }
@@ -282,7 +270,15 @@ void setup() {
     leds[0] = CRGB::Orange; FastLED.show();
     vTaskDelay(900);
 
-    pinMode(ADC_PIN, INPUT);  // Set the pin as an input for digital read
+    // HEX Serial Interface
+    HexSerial.begin(ResenseHEX::DEFAULT_BAUD, ResenseHEX::DEFAULT_CONFIG, RX_PIN, TX_PIN); 
+  
+    while (!Serial && !HexSerial) vTaskDelay(10); 
+  
+    // block until taring is completed (may fail outside Software-Trigger-Mode)
+    if(hex.tareBlocking()) Serial.println("Taring successful."); 
+    else Serial.println("Taring failed!");
+
 
     // queue for samples
     datatransferQueue = xQueueCreate(DATAQUEUE_SIZE, sizeof(Sample*));
