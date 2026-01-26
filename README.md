@@ -100,6 +100,7 @@ Available actions:
 - **Load JSON Settings**
 - Use default or modified settings
 - **Export measurement data** as `.csv`
+- **Select plotted Channels** in live monitor
 
 ![Client Tab](/src/sync_client.png)
 
