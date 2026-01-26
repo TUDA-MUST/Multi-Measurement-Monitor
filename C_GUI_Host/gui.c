@@ -9,10 +9,69 @@
 GQueue *waiting_tabs = NULL;
 GMutex queue_lock;
 
+/* === COLORS FOR CHANNELS (32) === */
+const double colors[32][3] = {
+    /* Original 8 — unchanged */
+    {1, 0, 0},     // 0  Red
+    {0, 1, 0},     // 1  Green
+    {0, 0, 1},     // 2  Blue
+    {1, 1, 0},     // 3  Yellow
+    {1, 0, 1},     // 4  Magenta
+    {0, 1, 1},     // 5  Cyan
+    {1, 0.5, 0},   // 6  Orange
+    {0.5, 1, 0.5}, // 7  Light green
+
+    /* Lighter / pastel variants of first eight */
+    {1, 0.4, 0.4},   // 8
+    {0.4, 1, 0.4},   // 9
+    {0.4, 0.4, 1},   // 10
+    {1, 1, 0.5},     // 11
+    {1, 0.5, 1},     // 12
+    {0.5, 1, 1},     // 13
+    {1, 0.7, 0.4},   // 14
+    {0.7, 1, 0.7},   // 15
+
+    /* Darker variants of first eight*/
+    {0.7, 0, 0},      // 16 
+    {0, 0.7, 0},      // 17 
+    {0, 0, 0.7},      // 18 
+    {0.7, 0.7, 0},    // 19 
+    {0.7, 0, 0.7},    // 20 
+    {0, 0.7, 0.7},    // 21 
+    {0.7, 0.35, 0},   // 22 
+    {0.35, 0.7, 0.35}, // 23
+
+    /* Additional distinct hues */
+    {0.6, 0.3, 0.9}, // 24 Purple
+    {0.3, 0.6, 0.9}, // 25 Sky blue
+    {0.3, 0.9, 0.6}, // 26 Teal-green
+    {0.9, 0.6, 0.3}, // 27 Amber
+    {0.9, 0.3, 0.6}, // 28 Rose
+    {0.6, 0.9, 0.3}, // 29 Lime
+    {0.5, 0.5, 0.5}, // 30 Gray
+    {0.8, 0.8, 0.8}  // 31 Light gray
+};
 
 
 
 
+
+
+static void set_checkbutton_label_color(GtkWidget *check, double r, double g, double b, const char *text){
+    GtkWidget *label = gtk_bin_get_child(GTK_BIN(check));
+    if (!GTK_IS_LABEL(label))
+        return;
+
+    char markup[128];
+    snprintf(markup, sizeof(markup),
+             "<span foreground=\"#%02X%02X%02X\">%s</span>",
+             (int)(r * 255),
+             (int)(g * 255),
+             (int)(b * 255),
+             text);
+
+    gtk_label_set_markup(GTK_LABEL(label), markup);
+}
 
 
 
@@ -173,6 +232,33 @@ void build_client_ui(ClientInfo *info, GtkWidget *win)
       GtkWidget *chan_label = gtk_label_new("Select Plotted Channels:");
       gtk_box_pack_start(GTK_BOX(right_box), chan_label, FALSE, FALSE, 5);
   
+      GtkWidget **chan_checkbuttons = g_new0(GtkWidget*, num_chans);
+  
+      for (guint i = 0; i < num_chans; i++) {
+          char buf[16];
+          snprintf(buf, sizeof(buf), "CHAN%u", i + 1);
+  
+          chan_checkbuttons[i] = gtk_check_button_new_with_label(buf);
+  
+          gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chan_checkbuttons[i]), TRUE);
+  
+          /* Color label modulo 32 */
+          guint c = i % 32;
+          set_checkbutton_label_color(chan_checkbuttons[i], colors[c][0], colors[c][1], colors[c][2], buf);
+  
+          gtk_box_pack_start(GTK_BOX(right_box), chan_checkbuttons[i], FALSE, FALSE, 3);
+      }
+  
+      g_object_set_data(G_OBJECT(info->tab_content), "chan_checkbuttons", chan_checkbuttons);
+      g_object_set_data(G_OBJECT(info->tab_content), "num_chans", GINT_TO_POINTER(num_chans));
+  }
+  
+  /*
+  if (info->settings && *(info->settings->float_number) > 1) {
+      guint num_chans = *(info->settings->float_number) - 1;
+      GtkWidget *chan_label = gtk_label_new("Select Plotted Channels:");
+      gtk_box_pack_start(GTK_BOX(right_box), chan_label, FALSE, FALSE, 5);
+  
       // Allocate array for checkbuttons
       GtkWidget **chan_checkbuttons = g_new0(GtkWidget*, num_chans);
       for (guint i = 0; i < num_chans; i++) {
@@ -190,6 +276,7 @@ void build_client_ui(ClientInfo *info, GtkWidget *win)
       g_object_set_data(G_OBJECT(info->tab_content), "chan_checkbuttons", chan_checkbuttons);
       g_object_set_data(G_OBJECT(info->tab_content), "num_chans", GINT_TO_POINTER(num_chans));
   }
+  */
 
 
 }
@@ -956,14 +1043,6 @@ static void on_export_csv_clicked(GtkButton *button, gpointer user_data) {
 
 
 
-
-
-
-
-
-
-
-
 // utility: draw text centered at position
 static void draw_text(cairo_t *cr, double x, double y, const char *txt){
     cairo_text_extents_t ext;
@@ -1077,11 +1156,7 @@ static gboolean on_plot_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data)
         cairo_show_text(cr, label);
     }
 
-    /* === COLORS FOR CHANNELS === */
-    const double colors[8][3] = {
-        {1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {1, 1, 0},
-        {1, 0, 1}, {0, 1, 1}, {1, 0.5, 0}, {0.5, 1, 0.5}
-    };
+
 
     /* === DRAW CHANNELS === */
     GtkWidget **chan_checkbuttons = g_object_get_data(G_OBJECT(tab), "chan_checkbuttons");
@@ -1092,7 +1167,7 @@ static gboolean on_plot_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data)
             continue;
         }
 
-        uint8_t ch_clr = ch%8;
+        uint8_t ch_clr = ch%32;
         cairo_set_source_rgb(cr, colors[ch_clr][0], colors[ch_clr][1], colors[ch_clr][2]);
         cairo_set_line_width(cr, 1.2);
 

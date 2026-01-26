@@ -1,14 +1,14 @@
 R"JSON(
 {
   "gui_handle": "ESP32-HEX32-client",
-  "float_number": "8",
+  "float_number": "9",
   "settings": [
     {
       "gui_handle": "Sample Rate (set to HW setting)",
       "microcontroller_handle": "sample_rate_hz",
       "type": "combo",
       "datatype": "uint32",
-      "default": 1000,
+      "default": 500,
       "options": [100, 500, 1000]
     }
      ]

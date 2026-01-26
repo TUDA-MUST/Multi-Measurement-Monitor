@@ -11,8 +11,8 @@ Preferences prefs;
 // ──────────────────────────────────────────────────────────────
 // CONFIG
 // ──────────────────────────────────────────────────────────────
-#define NUM_LEDS 2
-#define DATA_PIN 21
+#define NUM_LEDS 1
+#define DATA_PIN 40
 
 #define BUFFERSIZE 30
 #define SAMPLE_SIZE_BYTES 36      // size of Sample struct
@@ -274,11 +274,14 @@ void setup() {
     HexSerial.begin(ResenseHEX::DEFAULT_BAUD, ResenseHEX::DEFAULT_CONFIG, RX_PIN, TX_PIN); 
   
     while (!Serial && !HexSerial) vTaskDelay(10); 
-  
+    Serial.println("Starting Tara!");
     // block until taring is completed (may fail outside Software-Trigger-Mode)
     if(hex.tareBlocking()) Serial.println("Taring successful."); 
-    else Serial.println("Taring failed!");
-
+    else {
+        Serial.println("Taring failed, restarting client!");
+        delay(200);
+        ESP.restart();
+    }
 
     // queue for samples
     datatransferQueue = xQueueCreate(DATAQUEUE_SIZE, sizeof(Sample*));
