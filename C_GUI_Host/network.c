@@ -95,6 +95,35 @@ gboolean get_next_tcp_package(GSocket *sock, TcpPackage *pkg, guint32 timeout_ms
 
 
 // ---------------- Helper: read exactly n bytes from GSocket ----------------
+
+
+static gboolean read_bytes(GSocket *sock, guint8 *buffer, gsize n, guint32 timeout_ms)
+{
+    gsize read_so_far = 0; gint64 deadline = g_get_monotonic_time() + (gint64)timeout_ms * G_TIME_SPAN_MILLISECOND;
+    while (read_so_far < n) {
+        gint64 remaining = deadline - g_get_monotonic_time(); 
+        if (remaining <= 0) {
+            g_warning("read_bytes skipping after timeout, can't guarantee data integrity at this point!");
+            return FALSE;
+        }
+        GError *err = NULL;
+        if (!g_socket_condition_timed_wait(sock, G_IO_IN | G_IO_HUP | G_IO_ERR, remaining, NULL, &err)) { 
+            if (err) g_error_free(err); 
+            return FALSE; 
+        }
+        gssize bytes = g_socket_receive(sock, buffer + read_so_far, n - read_so_far, NULL, &err);
+        if (bytes > 0) read_so_far += bytes;
+        else if (bytes == 0) return FALSE;
+        else { 
+            if (err && g_error_matches(err, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK))  g_clear_error(&err); continue; 
+            if (err) g_error_free(err); return FALSE; 
+        }
+    }
+    return TRUE;
+}
+
+
+/*
 static gboolean read_bytes(GSocket *sock, guint8 *buffer, gsize n, guint32 timeout_ms) {
     if (!sock || !buffer || n == 0) return FALSE;
 
@@ -129,9 +158,7 @@ static gboolean read_bytes(GSocket *sock, guint8 *buffer, gsize n, guint32 timeo
 
     return TRUE;
 }
-
-
-
+*/
 
 
 

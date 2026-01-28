@@ -14,7 +14,7 @@ Preferences prefs;
 #define NUM_LEDS 1
 #define DATA_PIN 40
 
-#define BUFFERSIZE 30
+#define BUFFERSIZE 25
 #define SAMPLE_SIZE_BYTES 36      // size of Sample struct
 #define DATAQUEUE_SIZE 1024
 
