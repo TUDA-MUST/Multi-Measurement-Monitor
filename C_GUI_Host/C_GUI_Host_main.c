@@ -265,7 +265,7 @@ gboolean broadcast_callback(gpointer data)
 // Shutdown handler
 static void on_close_clicked(GtkButton *button, gpointer user_data)
 {
-    g_print("Shutting down Client Monitor...\n");
+    g_print("Shutting down Multi Measurement Monitor...\n");
 
     // Stop socket service
     if (global_service) {
@@ -329,7 +329,7 @@ int main(int argc, char **argv)
 
     // Main window
     GtkWidget *win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(win), "Client Monitor");
+    gtk_window_set_title(GTK_WINDOW(win), "Multi Measurement Monitor");
     gtk_window_set_default_size(GTK_WINDOW(win), 900, 600);
 
     // Notebook container

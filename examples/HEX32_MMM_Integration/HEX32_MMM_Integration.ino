@@ -18,6 +18,8 @@ Preferences prefs;
 #define SAMPLE_SIZE_BYTES 36      // size of Sample struct
 #define DATAQUEUE_SIZE 1024
 
+
+#define ANTENNA_PIN 41
 #ifndef TX_PIN
 #define TX_PIN 43
 #endif
@@ -114,27 +116,48 @@ uint64_t waitAndApplySettings_simple(WiFiClient &client)
 // continuously capture analog value + timestamp
 // ──────────────────────────────────────────────────────────────
 void aquireTaskCode(void* params) {
+    Sample* tare_sample = (Sample*) calloc(1, sizeof(Sample));
+    uint32_t tara_num = 20;
+    for(int i= 0; i < tara_num; i++){
+        if (hex.triggerAndRead(frame)) {  
+                if (tare_sample) {
+                    tare_sample->forces[0] += frame.fx;
+                    tare_sample->forces[1] += frame.fy;
+                    tare_sample->forces[2] += frame.fz;
+                    tare_sample->torques[0] += frame.mx;
+                    tare_sample->torques[1] += frame.my;
+                    tare_sample->torques[2] += frame.mz;
+                }
+        }
+    }
+
+    tare_sample->forces[0] = tare_sample->forces[0] / tara_num;
+    tare_sample->forces[1] = tare_sample->forces[1] / tara_num;
+    tare_sample->forces[2] = tare_sample->forces[2] / tara_num;
+    tare_sample->torques[0] = tare_sample->torques[0] / tara_num;
+    tare_sample->torques[1] = tare_sample->torques[1] / tara_num;
+    tare_sample->torques[2] = tare_sample->torques[2] / tara_num;
     
     while (1) {
         if (hex.triggerAndRead(frame)) { 
-            if (hex.validateLimits(frame)) { 
                 Sample* s = (Sample*) malloc(sizeof(Sample));
                 if (s) {
-                    s->forces[0] = frame.fx;
-                    s->forces[1] = frame.fy;
-                    s->forces[2] = frame.fz;
-                    s->torques[0] = frame.mx;
-                    s->torques[1] = frame.my;
-                    s->torques[2] = frame.mz;
+                    s->forces[0] = frame.fx - tare_sample->forces[0];
+                    s->forces[1] = frame.fy - tare_sample->forces[1];
+                    s->forces[2] = frame.fz - tare_sample->forces[2];
+                    s->torques[0] = frame.mx - tare_sample->torques[0];
+                    s->torques[1] = frame.my - tare_sample->torques[1];
+                    s->torques[2] = frame.mz - tare_sample->torques[2];
                     s->temperature = frame.temperature;
                     s->hex_timestamp = (float)frame.timestamp;
                     s->esp_timestamp = (float)esp_timer_get_time();  // Get timestamp in microseconds
                     xQueueSend(datatransferQueue, &s, 0);
                 }
-            }
+            //}
         }
         vTaskDelay(1); 
     }
+    free(tare_sample);
 }
 
 
@@ -267,6 +290,9 @@ void setup() {
     FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
     FastLED.setBrightness(5);
 
+    pinMode(ANTENNA_PIN, OUTPUT);
+    digitalWrite(ANTENNA_PIN, LOW);
+
     leds[0] = CRGB::Orange; FastLED.show();
     vTaskDelay(900);
 
@@ -274,7 +300,9 @@ void setup() {
     HexSerial.begin(ResenseHEX::DEFAULT_BAUD, ResenseHEX::DEFAULT_CONFIG, RX_PIN, TX_PIN); 
   
     while (!Serial && !HexSerial) vTaskDelay(10); 
-    Serial.println("Starting Tara!");
+    leds[0] = CRGB::White; FastLED.show();
+    Serial.println("\nStarting Tara!");
+    vTaskDelay(20);
     // block until taring is completed (may fail outside Software-Trigger-Mode)
     if(hex.tareBlocking()) Serial.println("Taring successful."); 
     else {
@@ -282,6 +310,7 @@ void setup() {
         delay(200);
         ESP.restart();
     }
+    leds[0] = CRGB::Orange; FastLED.show();
 
     // queue for samples
     datatransferQueue = xQueueCreate(DATAQUEUE_SIZE, sizeof(Sample*));
