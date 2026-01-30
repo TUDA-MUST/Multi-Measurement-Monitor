@@ -32,9 +32,8 @@ To use MMM, download the working binaries or compile the project for your target
 
 **Tested binaries:**
 - **Ubuntu 24.04:**  
-  [`/C_GUI_Host/MultiMeasurementMonitor`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/tree/main/C_GUI_Host)
-- **Windows 10:**  
-  [`/C_GUI_Host/WinApp/bin/MultiMeasurementMonitor.exe`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/tree/main/C_GUI_Host/WinApp/bin) 
+  
+- **Windows 10:**   
   > Requires the dependencies located in the `WinApp` directory
 
 ---
