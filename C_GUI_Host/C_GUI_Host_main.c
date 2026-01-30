@@ -1,5 +1,5 @@
-//gcc C_GUI_Host_main.c gui.c client.c network.c settings.c -o MulitMeasurementMonitor -DLINUX `pkg-config --cflags --libs gtk+-3.0 json-glib-1.0` -lm
-// gcc C_GUI_Host_main.c gui.c client.c network.c settings.c -o ./WinApp/bin/MulitMeasurementMonitor.exe -D_WIN32 -lws2_32 -liphlpapi $(pkg-config --cflags --libs gtk+-3.0 json-glib-1.0)
+//gcc -O3 -ftree-vectorize C_GUI_Host_main.c gui.c client.c network.c settings.c -o MulitMeasurementMonitor -DLINUX `pkg-config --cflags --libs gtk+-3.0 json-glib-1.0` -lm
+// gcc -O3 -ftree-vectorize C_GUI_Host_main.c gui.c client.c network.c settings.c -o ./WinApp/bin/MulitMeasurementMonitor.exe -D_WIN32 -lws2_32 -liphlpapi $(pkg-config --cflags --libs gtk+-3.0 json-glib-1.0)
 
 #ifdef _WIN32
     #define _WINSOCK_DEPRECATED_NO_WARNINGS

@@ -264,7 +264,7 @@ void sendTaskCode(void* params) {
         // build packet
         memcpy(out, header, 5);
         memcpy(out + 5, buffer, dataSize);
-
+        
         client.write(out, totalOut);
         sent += BUFFERSIZE;
     }
