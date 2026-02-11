@@ -1,6 +1,7 @@
 R"JSON(
 {
   "gui_handle": "ESP32-HEX32-client",
+  "channel_names": ["Fx in N","Fy in N","Fz in N","Tx in mNm","Ty in mNm","Tz in mNm","Temperature in C","hex_time","local_time_us"],
   "float_number": "9",
   "settings": [
     {

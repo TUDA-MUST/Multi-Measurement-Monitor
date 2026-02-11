@@ -100,6 +100,8 @@ Available actions:
 - Use default or modified settings
 - **Export measurement data** as `.csv`
 - **Select plotted Channels** in live monitor
+- **Autoscaling enabled** scales live monitor to bigger values
+- **Fast drawing routine** reduces drawing calculations for weaker PCs
 
 ![Client Tab](/src/sync_client.png)
 
@@ -146,7 +148,8 @@ Two types of JSON files are used:
 
 Sent as payload of the `HANDSHAKE` package. Contains:
 
-- `gui_handle` – Client name in GUI and CSV exports  
+- `gui_handle` – Client name in GUI and CSV exports 
+- `channel_names` – optional array of Channel names (array size must match float number), fallback to CHANx available 
 - `float_number` – Number of floats per sample  
   > Includes timestamp (e.g. `4 = 3 channels + 1 timestamp`)  
 - `settings` – Array describing GUI settings

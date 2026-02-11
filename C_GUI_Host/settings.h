@@ -18,8 +18,9 @@ typedef struct {
 } GuiSetting;
 
 typedef struct {
-    char *gui_handle;
-    uint32_t *float_number;
+    char *gui_handle;          //name of client in GUI
+    uint32_t *float_number;    //number of floats send per sample
+    char **channel_names;         //optional: names for channesl, number equal to float_number, else fallback to CHAN1,...
     GPtrArray *settings;      // array of GuiSetting*, a "sample_rate_hz" setting is required 
 } GuiConfig;
 

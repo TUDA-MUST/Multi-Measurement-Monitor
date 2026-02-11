@@ -210,11 +210,11 @@ void build_client_ui(ClientInfo *info, GtkWidget *win)
   // --- Y-axis Range Controls ---
   GtkWidget *ymax_label = gtk_label_new("Y-Max for Live Plot");
   GtkWidget *ymax_entry = gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(ymax_entry), "2500");
+  gtk_entry_set_text(GTK_ENTRY(ymax_entry), "20");
   
   GtkWidget *ymin_label = gtk_label_new("Y-Min for Live Plot");
   GtkWidget *ymin_entry = gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(ymin_entry), "-2500");
+  gtk_entry_set_text(GTK_ENTRY(ymin_entry), "-20");
   
   // store for later access in the draw function
   g_object_set_data(G_OBJECT(info->tab_content), "ymax_entry", ymax_entry);
@@ -226,25 +226,36 @@ void build_client_ui(ClientInfo *info, GtkWidget *win)
   gtk_box_pack_start(GTK_BOX(right_box), ymin_entry, FALSE, FALSE, 3);
 
   
+  GtkWidget *chan_label = gtk_label_new("Configure Plotted Channels:");
+  gtk_box_pack_start(GTK_BOX(right_box), chan_label, FALSE, FALSE, 5);
+  
+  // --- Autoscaling Tick-box ---
+  GtkWidget *autoscale_check = gtk_check_button_new_with_label("--- Autoscaling enabled ---");
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(autoscale_check), TRUE);
+  gtk_box_pack_start(GTK_BOX(right_box), autoscale_check, FALSE, FALSE, 5);
+  g_object_set_data(G_OBJECT(info->tab_content), "autoscale_check", autoscale_check);
+
+  // --- Fast Drawing Tick-box ---
+  GtkWidget *fast_draw_check = gtk_check_button_new_with_label("Fast drawing routine");
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(fast_draw_check), FALSE);  // NOT ticked by default
+  gtk_box_pack_start(GTK_BOX(right_box), fast_draw_check, FALSE, FALSE, 5);
+  g_object_set_data(G_OBJECT(info->tab_content), "fast_draw_check", fast_draw_check);
+
   // --- Channel Tick-boxes ---
   if (info->settings && *(info->settings->float_number) > 1) {
       guint num_chans = *(info->settings->float_number) - 1;
-      GtkWidget *chan_label = gtk_label_new("Select Plotted Channels:");
-      gtk_box_pack_start(GTK_BOX(right_box), chan_label, FALSE, FALSE, 5);
-  
+      
       GtkWidget **chan_checkbuttons = g_new0(GtkWidget*, num_chans);
   
       for (guint i = 0; i < num_chans; i++) {
-          char buf[16];
-          snprintf(buf, sizeof(buf), "CHAN%u", i + 1);
-  
-          chan_checkbuttons[i] = gtk_check_button_new_with_label(buf);
-  
+          char *label_copy = g_strdup(info->settings->channel_names[i]);
+          chan_checkbuttons[i] = gtk_check_button_new_with_label(label_copy);
+
           gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chan_checkbuttons[i]), TRUE);
   
           /* Color label modulo 32 */
           guint c = i % 32;
-          set_checkbutton_label_color(chan_checkbuttons[i], colors[c][0], colors[c][1], colors[c][2], buf);
+          set_checkbutton_label_color(chan_checkbuttons[i], colors[c][0], colors[c][1], colors[c][2], label_copy);
   
           gtk_box_pack_start(GTK_BOX(right_box), chan_checkbuttons[i], FALSE, FALSE, 3);
       }
@@ -253,32 +264,6 @@ void build_client_ui(ClientInfo *info, GtkWidget *win)
       g_object_set_data(G_OBJECT(info->tab_content), "num_chans", GINT_TO_POINTER(num_chans));
   }
   
-  /*
-  if (info->settings && *(info->settings->float_number) > 1) {
-      guint num_chans = *(info->settings->float_number) - 1;
-      GtkWidget *chan_label = gtk_label_new("Select Plotted Channels:");
-      gtk_box_pack_start(GTK_BOX(right_box), chan_label, FALSE, FALSE, 5);
-  
-      // Allocate array for checkbuttons
-      GtkWidget **chan_checkbuttons = g_new0(GtkWidget*, num_chans);
-      for (guint i = 0; i < num_chans; i++) {
-          char buf[16];
-          snprintf(buf, sizeof(buf), "CHAN%u", i + 1);
-          chan_checkbuttons[i] = gtk_check_button_new_with_label(buf);
-
-          // Initialize checked
-          gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(chan_checkbuttons[i]), TRUE);
-
-          gtk_box_pack_start(GTK_BOX(right_box), chan_checkbuttons[i], FALSE, FALSE, 3);
-      }
-
-      // Store array for later access
-      g_object_set_data(G_OBJECT(info->tab_content), "chan_checkbuttons", chan_checkbuttons);
-      g_object_set_data(G_OBJECT(info->tab_content), "num_chans", GINT_TO_POINTER(num_chans));
-  }
-  */
-
-
 }
 
 
@@ -976,10 +961,11 @@ static void on_export_csv_clicked(GtkButton *button, gpointer user_data) {
          * SECOND HEADER LINE:
          * CHAN1;CHAN2;...;LOCAL_TIME;GLOBAL_TIME
          * ============================================================ */
-        for (int i = 0; i < (*client->settings->float_number) - 1; i++)
-            fprintf(fp, "CHAN%d;", i + 1);
-
-        fprintf(fp, "LOCAL_TIME;GLOBAL_TIME\n");
+        uint32_t num_chans = *client->settings->float_number;  // length of channel_names
+        for (uint32_t i = 0; i < num_chans; i++) {
+            fprintf(fp, "%s;", client->settings->channel_names[i]);
+        }
+        fprintf(fp, "GLOBAL_TIME\n");
 
 
         /* ============================================================
@@ -1038,6 +1024,67 @@ static void on_export_csv_clicked(GtkButton *button, gpointer user_data) {
 
 
 
+// function to autoscale ymin/ ymax 
+static gboolean compute_autoscale_y_range(ClientInfo *info, uint64_t start, uint64_t count, double *out_ymin, double *out_ymax){
+    if (!info || !info->measurement_data || count == 0)
+        return FALSE;
+
+    GtkWidget *tab = info->tab_content;
+
+    GtkWidget **chan_checkbuttons = g_object_get_data(G_OBJECT(tab), "chan_checkbuttons");
+
+    guint num_floats = *info->settings->float_number;
+    float *buf = info->measurement_data;
+
+    double ymin = G_MAXDOUBLE;
+    double ymax = -G_MAXDOUBLE;
+    gboolean found = FALSE;
+
+    for (uint64_t i = 0; i < count; i++) {
+        uint64_t base = (start + i) * num_floats;
+
+        for (guint ch = 0; ch < num_floats - 1; ch++) {
+
+            if (chan_checkbuttons &&
+                !gtk_toggle_button_get_active(
+                    GTK_TOGGLE_BUTTON(chan_checkbuttons[ch])))
+                continue;
+
+            double v = buf[base + ch];
+
+            if (v < ymin) ymin = v;
+            if (v > ymax) ymax = v;
+            found = TRUE;
+        }
+    }
+
+    if (!found || ymin == ymax)
+        return FALSE;
+
+    /* add 10% padding */
+    double pad = 0.1 * (ymax - ymin);
+    if (pad <= 0) pad = 1.0;
+
+    ymin -= pad;
+    ymax += pad;
+
+    /* =======================================================
+       COMMENT / UNCOMMENT THE NEXT LINE FOR EXPAND-ONLY MODE
+       ======================================================= */
+    /* EXPAND_ONLY_AUTOSCALE */
+    if (out_ymin && out_ymax) {
+        ymin = MIN(ymin, *out_ymin);
+        ymax = MAX(ymax, *out_ymax);
+    }
+
+    *out_ymin = ymin;
+    *out_ymax = ymax;
+
+    return TRUE;
+}
+
+
+
 
 
 
@@ -1084,8 +1131,41 @@ static gboolean on_plot_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data)
     }
 
 
+    static gint64 last_autoscale_us = 0;
+    const gint64 AUTOSCALE_INTERVAL_US = 800 * G_TIME_SPAN_MILLISECOND; // 800 ms
+
     uint64_t start = (total > PLOT_HISTORY * get_sample_rate(info->settings)) ? (total - PLOT_HISTORY * get_sample_rate(info->settings)) : 0;
     uint64_t count = total - start;
+
+    /* autoscale override */
+    GtkWidget *autoscale_check = g_object_get_data(G_OBJECT(tab), "autoscale_check");
+    gboolean autoscale_enabled = FALSE;
+
+    if (autoscale_check) {
+        autoscale_enabled = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(autoscale_check));
+        /* Disable manual Y range entries when autoscale is on */
+        if (ymin_entry) gtk_widget_set_sensitive(ymin_entry, !autoscale_enabled);
+        if (ymax_entry) gtk_widget_set_sensitive(ymax_entry, !autoscale_enabled);
+    
+        if (autoscale_enabled) {
+            gint64 now = g_get_monotonic_time();
+            if (now - last_autoscale_us >= AUTOSCALE_INTERVAL_US) {
+                compute_autoscale_y_range(info, start, count, &y_min, &y_max);
+                /* write back to entries */
+                if (ymin_entry && ymax_entry) {
+                    char buf_min[32];
+                    char buf_max[32];
+                    g_snprintf(buf_min, sizeof(buf_min), "%.1f", y_min);
+                    g_snprintf(buf_max, sizeof(buf_max), "%.1f", y_max);
+                    gtk_entry_set_text(GTK_ENTRY(ymin_entry), buf_min);
+                    gtk_entry_set_text(GTK_ENTRY(ymax_entry), buf_max);
+                }
+                last_autoscale_us = now;
+            }
+        }
+    }
+
+
 
     GtkAllocation alloc;
     gtk_widget_get_allocation(widget, &alloc);
@@ -1172,26 +1252,73 @@ static gboolean on_plot_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data)
         cairo_set_line_width(cr, 1.2);
 
         gboolean first = TRUE;
+        GtkWidget *fast_draw_check = g_object_get_data(G_OBJECT(info->tab_content), "fast_draw_check");
 
-        for (uint64_t i = 0; i < count; i++) {
-            uint64_t idx = (start + i) * (*info->settings->float_number);
+        gboolean fast_mode = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(fast_draw_check));
+        if(!fast_mode){
+            for (uint64_t i = 0; i < count; i++) {
+                uint64_t idx = (start + i) * (*info->settings->float_number);
 
-            float v_mV = buf[idx + ch];
-            double t_sec = buf[idx + (*info->settings->float_number)-1] / 1e6;
+                float v_mV = buf[idx + ch];
+                double t_sec = buf[idx + (*info->settings->float_number)-1] / 1e6;
 
-            // convert to plot coords
-            double x = y_axis_x + ( (t_sec - t_start) / t_range ) * (W - y_axis_x - 10 );
-            double y = x_axis_y - ( (v_mV - y_min) / y_range ) * (x_axis_y - 10);
+                // convert to plot coords
+                double x = y_axis_x + ( (t_sec - t_start) / t_range ) * (W - y_axis_x - 10 );
+                double y = x_axis_y - ( (v_mV - y_min) / y_range ) * (x_axis_y - 10);
 
-            if (first) {
-                cairo_move_to(cr, x, y);
-                first = FALSE;
-            } else {
-                cairo_line_to(cr, x, y);
+                if (first) {
+                    cairo_move_to(cr, x, y);
+                    first = FALSE;
+                } else {
+                    cairo_line_to(cr, x, y);
+                }
+            }
+        }else{
+            double plot_x0 = y_axis_x;
+            double plot_x1 = W - 10;
+            int plot_width_px = (int)(plot_x1 - plot_x0);
+
+            if (plot_width_px <= 1)
+                continue;  // skip tiny plot
+
+            uint64_t samples_per_pixel = count / plot_width_px;
+            if (samples_per_pixel < 1)
+                samples_per_pixel = 1;
+
+            double x_scale = (plot_x1 - plot_x0) / (double)plot_width_px;
+            double y_scale = (x_axis_y - 10) / (y_max - y_min);
+
+            for (int px = 0; px < plot_width_px; px++) {
+                uint64_t i0 = start + (uint64_t)px * samples_per_pixel;
+                uint64_t i1 = i0 + samples_per_pixel;
+                if (i1 > total)
+                    i1 = total;
+
+                float vmin =  FLT_MAX;
+                float vmax = -FLT_MAX;
+
+                for (uint64_t i = i0; i < i1; i++) {
+                    uint64_t idx = i * (*info->settings->float_number);
+                    float v = buf[idx + ch];
+
+                    if (v < vmin) vmin = v;
+                    if (v > vmax) vmax = v;
+                }
+
+                if (vmin > vmax) // nothing in this pixel
+                    continue;
+
+                double x = plot_x0 + px * x_scale;
+                double y1 = x_axis_y - (vmin - y_min) * y_scale;
+                double y2 = x_axis_y - (vmax - y_min) * y_scale;
+
+                cairo_move_to(cr, x, y1);
+                cairo_line_to(cr, x, y2);
             }
         }
-
         cairo_stroke(cr);
+        
+
     }
 
     return FALSE;

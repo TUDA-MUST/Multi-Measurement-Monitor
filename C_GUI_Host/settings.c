@@ -425,6 +425,37 @@ GuiConfig* parse_gui_config_from_json(const uint8_t *json_data, size_t json_len)
     config->float_number = g_new(uint32_t, 1);
     *config->float_number = (uint32_t)atoi(float_str);
 
+
+    /* -------- channel_names -------- */
+    uint32_t fn = *config->float_number;
+
+    /* allocate exactly float_number entries */
+    config->channel_names = g_new0(char*, fn);
+
+    gboolean use_json_names = FALSE;
+
+    if (json_object_has_member(root_obj, "channel_names")) {
+        JsonArray *chan_arr = json_object_get_array_member(root_obj, "channel_names");
+        if (json_array_get_length(chan_arr) == fn) {
+            for (uint32_t i = 0; i < fn; i++) {
+                config->channel_names[i] = g_strdup(json_array_get_string_element(chan_arr, i));
+            }
+            use_json_names = TRUE;
+        }
+    }
+
+    if (!use_json_names) {
+        /* auto-generate, last one is LOCAL_TIME_us */
+        for (uint32_t i = 0; i < fn; i++) {
+            if (i == fn - 1) {
+                config->channel_names[i] = g_strdup("LOCAL_TIME_us");
+            } else {
+                config->channel_names[i] = g_strdup_printf("CHAN%u", i + 1);
+            }
+        }
+    }
+
+
     // Parse settings array
     JsonArray *settings_arr = json_object_get_array_member(root_obj, "settings");
     guint n = json_array_get_length(settings_arr);
@@ -467,10 +498,19 @@ GuiConfig* parse_gui_config_from_json(const uint8_t *json_data, size_t json_len)
 void free_gui_config(GuiConfig *config) {
     if (!config) return;
 
+    // Free channel_names array
+    if (config->channel_names) {
+        for (uint32_t i = 0; i < *config->float_number; i++) {
+            g_free(config->channel_names[i]);
+        }
+        g_free(config->channel_names);
+    }
+
     // Free float_number pointer
     if (config->float_number)
         g_free(config->float_number);
 
+    
     // Free each GuiSetting
     if (config->settings) {
         for (guint i = 0; i < config->settings->len; i++) {
@@ -738,91 +778,10 @@ gboolean parse_settings_from_json(ClientInfo *info, const char *json_path)
 }
 
 
-/*
-gboolean parse_settings_from_json(ClientInfo *info, const char *json_path) {
-    if (!info || !json_path) return FALSE;
-
-    JsonParser *parser = json_parser_new();
-    GError *error = NULL;
-
-    if (!json_parser_load_from_file(parser, json_path, &error)) {
-        g_warning("Failed to parse JSON file '%s': %s",
-                  json_path,
-                  error ? error->message : "unknown error");
-        g_clear_error(&error);
-        g_object_unref(parser);
-        return FALSE;
-    }
-
-    JsonNode *root = json_parser_get_root(parser);
-    if (!JSON_NODE_HOLDS_OBJECT(root)) {
-        g_warning("Root JSON node is not an object");
-        g_object_unref(parser);
-        return FALSE;
-    }
-
-    JsonObject *obj = json_node_get_object(root);
-
-    // ---- Sample rate (required) ----
-    if (!json_object_has_member(obj, "sample_rate_hz")) {
-        g_warning("JSON must contain 'sample_rate_hz'");
-        g_object_unref(parser);
-        return FALSE;
-    }
-
-    // ---- Ensure sample rate exists ----
-    if (!json_object_has_member(obj, "sample_rate_hz")) {
-        g_warning("JSON must contain 'sample_rate_hz'");
-        g_object_unref(parser);
-        return FALSE;
-    }
-
-    // ---- Update dynamic GuiSettings ----
-    for (guint i = 0; i < info->settings->settings->len; i++) {
-        GuiSetting *setting = g_ptr_array_index(info->settings->settings, i);
-
-        if (!json_object_has_member(obj, setting->gui_handle))
-            continue;
-
-        JsonNode *node = json_object_get_member(obj, setting->gui_handle);
-
-        // Update the GVariant value based on datatype
-        if (g_strcmp0(setting->datatype, "uint8") == 0) {
-            if (JSON_NODE_HOLDS_VALUE(node) && json_node_get_value_type(node) == G_TYPE_STRING) {
-                // Parse hex string to uint8_t
-                const char *hex = json_node_get_string(node);
-                uint8_t val = (uint8_t)strtoul(hex, NULL, 16);
-                g_variant_ref_sink(setting->default_value = g_variant_new_byte((guchar)val));
-            } else {
-                // JSON contains numeric value
-                uint8_t val = (uint8_t)json_node_get_int(node);
-                g_variant_ref_sink(setting->default_value = g_variant_new_byte((guchar)val));
-            }
-        } else if (g_strcmp0(setting->datatype, "uint32") == 0) {
-            uint32_t val = (uint32_t)json_node_get_int(node);
-            g_variant_ref_sink(setting->default_value = g_variant_new_uint32(val));
-        } else if (g_strcmp0(setting->datatype, "uint64") == 0) {
-            uint64_t val = (uint64_t)json_node_get_int(node);
-            g_variant_ref_sink(setting->default_value = g_variant_new_uint64(val));
-        } else if (g_strcmp0(setting->datatype, "int32") == 0) {
-            int32_t val = (int32_t)json_node_get_int(node);
-            g_variant_ref_sink(setting->default_value = g_variant_new_int32(val));
-        } else if (g_strcmp0(setting->datatype, "float") == 0) {
-            double val = json_node_get_double(node);
-            g_variant_ref_sink(setting->default_value = g_variant_new_double(val));
-        } else if (g_strcmp0(setting->datatype, "char[256]") == 0) {
-            const char *val = json_node_get_string(node);
-            g_variant_ref_sink(setting->default_value = g_variant_new_string(val));
-        }
-    }
-
-    g_object_unref(parser);
-    return TRUE;
-}
 
 
 
-*/
+
 
 
 
