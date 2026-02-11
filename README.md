@@ -149,7 +149,7 @@ Two types of JSON files are used:
 Sent as payload of the `HANDSHAKE` package. Contains:
 
 - `gui_handle` – Client name in GUI and CSV exports 
-- `channel_names` – optional array of Channel names (array size must match float number), fallback to CHANx available 
+- `channel_names` – optional array of Channel names (array size must match float number), fallback to CHANx available  (see [`/examples/HEX32_MMM_Integration/def_settings_config.json`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/blob/main/examples/HEX32_MMM_Integration/def_settings_config.json))
 - `float_number` – Number of floats per sample  
   > Includes timestamp (e.g. `4 = 3 channels + 1 timestamp`)  
 - `settings` – Array describing GUI settings
