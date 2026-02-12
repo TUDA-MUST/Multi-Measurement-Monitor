@@ -43,7 +43,7 @@ To use MMM, download the working binaries or compile the project for your target
 Before starting the application:
 
 1. Create or connect to a **Wi-Fi hotspot** that clients can connect to.
-2. MMM will periodically broadcast a UDP message containing  
+2. MMM will periodically broadcast a UDP message to Port 5000 containing  
    `"SERVER_ALIVE"` to make itself detectable by clients.
 3. Through the broadcast clients can obtain the host IP and connect to the MMM under TCP Port 8080 via a Handshake package.
 
