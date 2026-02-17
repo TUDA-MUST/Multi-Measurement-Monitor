@@ -1,5 +1,5 @@
 # Multi-Measurement-Monitor (MMM)
-
+[![Badge_must](https://img.shields.io/badge/Made_by-MUST-blue)](https://www.etit.tu-darmstadt.de/must/home_must/index.en.jsp)
 [![Built with GTK](https://img.shields.io/badge/Built%20w%2F-GTK3.0+-blue)](https://www.gtk.org/)
 
 The **Multi-Measurement-Monitor (MMM)** is a simple-to-use monitoring and synchronization application that allows various clients (microcontrollers or PCs) to configure, perform, and record measurements through a unified interface.
@@ -28,7 +28,8 @@ Drift of raw local times of ESP32-S3 sync clients recording a 50 Hz digital sign
 
 ### Installation
 
-To use MMM, download the working binaries or compile the project for your target platform.
+To use MMM, download the newest, system specific application under [Releases](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/releases)
+or compile the project for your target platform yourself.
 
 **Tested binaries:**
 - **Ubuntu 24.04:**  
