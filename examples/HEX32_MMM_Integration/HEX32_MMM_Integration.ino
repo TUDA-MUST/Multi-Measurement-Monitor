@@ -116,6 +116,7 @@ uint64_t waitAndApplySettings_simple(WiFiClient &client)
 // continuously capture analog value + timestamp
 // ──────────────────────────────────────────────────────────────
 void aquireTaskCode(void* params) {
+    
     Sample* tare_sample = (Sample*) calloc(1, sizeof(Sample));
     uint32_t tara_num = 20;
     for(int i= 0; i < tara_num; i++){
@@ -139,6 +140,7 @@ void aquireTaskCode(void* params) {
     tare_sample->torques[2] = tare_sample->torques[2] / tara_num;
     
     while (1) {
+        vTaskDelay(5);
         if (hex.triggerAndRead(frame)) { 
                 Sample* s = (Sample*) malloc(sizeof(Sample));
                 if (s) {
