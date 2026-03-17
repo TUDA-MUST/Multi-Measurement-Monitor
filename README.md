@@ -37,7 +37,7 @@ or compile the project for your target platform yourself.
   > Requires the dependencies located in the `WinApp` directory. You can find the application under the "Bin" directory.
 
 ---
-``safaf``
+
 ### Network Setup
 
 Before starting the application:
@@ -46,7 +46,7 @@ Before starting the application:
 
    **SSID:** ``MultiFerroSpot``  
    **Password:** ``12345qwe``  
-   A lot of microcontollers, e.g. ESP32-S3, only support ``2.4 GHz`` WiFi, so you may need to set this too
+   A lot of microcontollers, e.g. ESP32-S3, only support ``2.4 GHz`` WiFi, so you may need to configure your network to support that band.
 
 3. MMM will periodically broadcast a UDP message to Port 5000 containing  
    `"SERVER_ALIVE"` to make itself detectable by clients.

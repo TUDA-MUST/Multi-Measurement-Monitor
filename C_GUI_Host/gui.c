@@ -1446,6 +1446,7 @@ static gpointer measurement_thread_func(gpointer user_data) {
 
 
         // --- 2. Receive incoming packages ---
+        // WARNING: parital read currently not recoverable!! 
         TcpPackage pkg;
         gboolean ok = get_next_tcp_package(sock, &pkg, 800); // 800ms timeout
         if (!ok) {
