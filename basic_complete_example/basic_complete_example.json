@@ -1,0 +1,85 @@
+R"JSON(
+{
+"gui_handle": "Example_All_Settings_Client",
+"float_number": "4",
+"channel_names": ["Voltage_V", "Current_mA", "Temperature_degC","Time_us"],
+"settings": [
+
+{
+  "gui_handle": "Sample Rate",
+  "microcontroller_handle": "sample_rate_hz",
+  "type": "combo",
+  "datatype": "uint32",
+  "default": 200,
+  "options": [10, 100, 200, 300]
+},
+
+{
+  "gui_handle": "Gain Level",
+  "microcontroller_handle": "gain_level",
+  "type": "combo",
+  "datatype": "uint8",
+  "default": 1,
+  "options": [0, 1, 2, 4, 8]
+},
+
+{
+  "gui_handle": "Control Register",
+  "microcontroller_handle": "ctrl_reg",
+  "type": "entry",
+  "datatype": "uint8_hex",
+  "default": "0x1F"
+},
+
+{
+  "gui_handle": "Buffer Size",
+  "microcontroller_handle": "buffer_size",
+  "type": "entry",
+  "datatype": "uint32",
+  "default": 4096
+},
+
+{
+  "gui_handle": "Device Serial Number",
+  "microcontroller_handle": "device_serial",
+  "type": "entry",
+  "datatype": "uint64",
+  "default": 123456789012345
+},
+
+{
+  "gui_handle": "Trigger Offset",
+  "microcontroller_handle": "trigger_offset",
+  "type": "entry",
+  "datatype": "int32",
+  "default": -10
+},
+
+{
+  "gui_handle": "Calibration Factor",
+  "microcontroller_handle": "calibration_factor",
+  "type": "entry",
+  "datatype": "float",
+  "default": 1.2
+},
+
+{
+  "gui_handle": "Operator",
+  "microcontroller_handle": "name_of_operator",
+  "type": "entry",
+  "datatype": "char[256]",
+  "default": "Max Mustermann"
+},
+
+{
+  "gui_handle": "Operating Mode",
+  "microcontroller_handle": "mode",
+  "type": "combo",
+  "datatype": "uint8",
+  "default": 1,
+  "options": [0, 1, 2]
+}
+]
+}
+)JSON";
+

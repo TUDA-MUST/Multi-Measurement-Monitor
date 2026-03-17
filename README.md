@@ -17,7 +17,7 @@ The **Multi-Measurement-Monitor (MMM)** is a simple-to-use monitoring and synchr
 
 ## 📊 Time Synchronization Example
 
-![Time Synchronization](/src/sync.png)
+![Time Synchronization](doc/sync.png)
 
 Drift of raw local times of ESP32-S3 sync clients recording a 50 Hz digital signal after two hours  
 (left) vs. synchronized global time through MMM (right).
@@ -70,7 +70,7 @@ The **Main Tab** allows you to:
   > MMM preallocates all samples for this time window  
   > `Max samples = GlobalDuration × client sample rate`
 
-![Main Tab](/src/Main_tab.png)
+![Main Tab](doc/Main_tab.png)
 
 ---
 
@@ -104,7 +104,7 @@ Available actions:
 - **Autoscaling enabled** scales live monitor to bigger values
 - **Fast drawing routine** reduces drawing calculations for weaker PCs
 
-![Client Tab](/src/sync_client.png)
+![Client Tab](doc/sync_client.png)
 
 
 **Data expectations:**

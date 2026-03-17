@@ -1,0 +1,11 @@
+{
+  "sample_rate_hz": 100,
+  "gain_level": 4,
+  "ctrl_reg": "0xAA",
+  "buffer_size": 1024,
+  "device_serial": 64589843523,
+  "trigger_offset": -456,
+  "calibration_factor": 4.56,
+  "name_of_operator": "Elisabeth Musterfrau",
+  "mode": 2
+}
