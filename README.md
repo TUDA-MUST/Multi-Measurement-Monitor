@@ -42,7 +42,7 @@ or compile the project for your target platform yourself.
 
 Before starting the application:
 
-1. Create or connect to a Wi-Fi hotspot that clients can connect to. The standard firmware will look for the following WiFi network if no other options are set during bootup:
+1. Create or connect to a Wi-Fi hotspot that clients can connect to. Clients, utilizing [`/lib/tcp_client_network.h`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/tree/main/lib) without reconfiguring the network credentials through a serial terminal (non-volatile setting) before connecting to a network, will look for the following WiFi network:
 
    **SSID:** ``MultiFerroSpot``  
    **Password:** ``12345qwe``  
@@ -139,7 +139,7 @@ Client-side interaction is largely handled by the provided Arduino library:
 
 A full basic example is provided under [/basic_complete_example/basic_complete_example.ino](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/blob/main/basic_complete_example/basic_complete_example.ino), while more complex internally used clients are found under [`/examples/`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/tree/main/examples)
 
-The lib, as well as the SyncClient example are both written in the Arduino IDE for an ESP32-S3 using 2.4GHz WiFi to connect to a Hotspot running the MMM.
+The lib, as well as the examples are both written in the Arduino IDE for an ESP32-S3 using 2.4GHz WiFi to connect to a Hotspot running the MMM.
 
 ---
 
