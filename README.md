@@ -37,20 +37,20 @@ or compile the project for your target platform yourself.
   > Requires the dependencies located in the `WinApp` directory. You can find the application under the "Bin" directory.
 
 ---
-
+``safaf``
 ### Network Setup
 
 Before starting the application:
 
-1. Create or connect to a **Wi-Fi hotspot** that clients can connect to. The standard firmware will look for the following WiFi network if no other options are set during bootup:
-   ```
-   SSID: MultiFerroSpot
-   Password: 12345qwe
-   (Careful! A lot of microcontollers, e.g. ESP32-S3, only support 2.4 GHz WiFi, so you may need to set this too)
-   ```
-2. MMM will periodically broadcast a UDP message to Port 5000 containing  
+1. Create or connect to a Wi-Fi hotspot that clients can connect to. The standard firmware will look for the following WiFi network if no other options are set during bootup:
+
+   **SSID:** ``MultiFerroSpot``  
+   **Password:** ``12345qwe``  
+   A lot of microcontollers, e.g. ESP32-S3, only support ``2.4 GHz`` WiFi, so you may need to set this too
+
+3. MMM will periodically broadcast a UDP message to Port 5000 containing  
    `"SERVER_ALIVE"` to make itself detectable by clients.
-3. Through the broadcast clients can obtain the host IP and connect to the MMM under TCP Port 8080 via a Handshake package.
+4. Through the broadcast clients can obtain the host IP and connect to the MMM under TCP Port 8080 via a Handshake package.
 
 ---
 
