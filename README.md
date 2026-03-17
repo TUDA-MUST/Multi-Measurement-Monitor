@@ -133,7 +133,7 @@ Client-side interaction is largely handled by the provided Arduino library:
    - Stop measuring on `STOP` packages
 6. Reset the connection after measurement completion
 
-Read through the `SyncClient` example for further explanation.
+A full basic example is provided under [/basic_complete_example/basic_complete_example.ino](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/blob/main/basic_complete_example/basic_complete_example.ino), while more complex internally used clients are found under [`/examples/`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/tree/main/examples)
 
 The lib, as well as the SyncClient example are both written in the Arduino IDE for an ESP32-S3 using 2.4GHz WiFi to connect to a Hotspot running the MMM.
 
@@ -155,6 +155,8 @@ Sent as payload of the `HANDSHAKE` package. Contains:
   > Includes timestamp (e.g. `4 = 3 channels + 1 timestamp`)  
 - `settings` – Array describing GUI settings
 
+Example: [`/basic_complete_example/basic_complete_example.json`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/blob/main/basic_complete_example/basic_complete_example.json)
+
 #### 2. Settings JSON (MMM → Client)
 
 Used when:
@@ -164,7 +166,7 @@ Used when:
 Contains:
 - `microcontroller_handle : value` pairs
 
-📁 Examples: `/json_examples/`
+Example: [`/basic_complete_example/loadable_settings.json`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/blob/main/basic_complete_example/loadable_settings.json)
 
 ---
 

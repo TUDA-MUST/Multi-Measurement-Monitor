@@ -6,13 +6,15 @@ The data the programm processes is nonsensical though...
 
 #include <WiFi.h>
 #include <ArduinoJson.h>
-#include "../../lib/tcp_client_network.cpp"
+#include "../lib/tcp_client_network.cpp"
 
 
 
 #define CHANNEL_COUNT 4
 #define SAMPLE_SIZE_BYTES (CHANNEL_COUNT * 4)
 #define BUFFERSIZE 16
+
+WiFiClient client;
 
 // --------------------------------------------------
 // CONFIG JSON
@@ -199,7 +201,7 @@ void loop(){
 
         memcpy(buffer + i * SAMPLE_SIZE_BYTES, sample, SAMPLE_SIZE_BYTES);
 
-        phase += 1.0 / settings.sample_rate_hz;
+        phase += 1.0 / (12*settings.sample_rate_hz);
         if (phase > 1) phase -= 1;
     }
 
