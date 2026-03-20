@@ -534,9 +534,20 @@ static void on_send_btn_clicked(GtkButton *button, gpointer user_data) {
     info->allocated_client_times = 2;
     info->client_time_sync = g_malloc0((info-> allocated_client_times) * sizeof(ClientTime));
     info->measurement_active = TRUE;
+
+    if (!info || !info->settings || !info->settings->gui_handle) {
+        info->autosave_filepath = g_strdup("tempfile-unknown.csv");
+        return;
+    }
+    GDateTime *now = g_date_time_new_now_utc();
+    gchar *time_str = g_date_time_format(now, "%Y%m%d-%H%M%S");
+    // Build filename
+    info->autosave_filepath = g_strdup_printf("tempfile-%s-%s.csv", info->settings->gui_handle, time_str);
+    g_free(time_str);
+    g_date_time_unref(now);
+
     // Start reading measurement data on new thread
     info->measurement_thread = g_thread_new("measurement-reader", measurement_thread_func, info);
-
 }
 
 
@@ -668,6 +679,87 @@ gboolean on_client_incoming(GSocketService *service,
 
     free_tcp_package(&pkg);
     return TRUE;
+}
+
+
+
+
+
+
+
+
+
+
+
+static gboolean autosave_idle_cb(gpointer user_data) {
+    ClientInfo *client = (ClientInfo *)user_data;
+    if (!client) return G_SOURCE_REMOVE;
+
+    size_t pages = client->autosave_pages_to_write;
+
+    // We only write fully safe pages → omit newest page
+    if (pages == 0) {
+        client->autosave_pending = FALSE;
+        return G_SOURCE_REMOVE;
+    }
+
+    size_t safe_pages = pages - 1;
+
+    uint32_t num_chans = *client->settings->float_number;
+    size_t row_floats = num_chans;
+
+    size_t floats_total = safe_pages * floats_per_page;
+    size_t rows_total   = floats_total / row_floats;
+
+    // Nothing new to write?
+    if (rows_total <= client->autosave_last_written_row) {
+        client->autosave_pending = FALSE;
+        return G_SOURCE_REMOVE;
+    }
+
+    FILE *fp;
+
+    if (!client->autosave_initialized) {
+        fp = fopen(client->autosave_filepath, "w");
+        if (!fp) {
+            g_warning("Autosave: failed to open file.");
+            client->autosave_pending = FALSE;
+            return G_SOURCE_REMOVE;
+        }
+
+        /* ===== HEADER (only once) ===== */
+        fprintf(fp, "### ");
+        for (uint32_t i = 0; i < num_chans; i++) {
+            fprintf(fp, "%s;", client->settings->channel_names[i]);
+        }
+        fprintf(fp, "LOCAL_TIME\n");
+
+        client->autosave_initialized = TRUE;
+    } else {
+        fp = fopen(client->autosave_filepath, "a");
+        if (!fp) {
+            g_warning("Autosave: failed to open file (append).");
+            client->autosave_pending = FALSE;
+            return G_SOURCE_REMOVE;
+        }
+    }
+
+    /* ===== APPEND ONLY NEW ROWS ===== */
+    for (uint64_t i = client->autosave_last_written_row; i < rows_total; i++) {
+        for (uint32_t j = 0; j < num_chans; j++) {
+            fprintf(fp, "%.6f", get_measurement(client, i, j));
+            if (j < num_chans - 1)
+                fprintf(fp, ";");
+        }
+        fprintf(fp, "\n");
+    }
+
+    client->autosave_last_written_row = rows_total;
+
+    fclose(fp);
+
+    client->autosave_pending = FALSE;
+    return G_SOURCE_REMOVE;
 }
 
 
@@ -1067,6 +1159,21 @@ static void on_export_csv_clicked(GtkButton *button, gpointer user_data) {
     g_print("Data exported to %s\n", filename);
     g_free(filename);
     gtk_widget_destroy(dialog);
+
+
+    /* ===== CLEAN UP AUTOSAVE FILE ===== */
+    if (client->autosave_filepath && client->autosave_initialized) {
+        if (remove(client->autosave_filepath) == 0) {
+            g_message("Autosave file removed: %s", client->autosave_filepath);
+        } else {
+            g_warning("Failed to remove autosave file: %s", client->autosave_filepath);
+        }
+
+        /* Reset autosave state */
+        client->autosave_initialized = FALSE;
+        client->autosave_last_written_row = 0;
+        client->autosave_pages_to_write = 0;
+    }
 }
 
 
@@ -1700,6 +1807,8 @@ static gpointer measurement_thread_func(gpointer user_data) {
     if (!sock) return NULL;
 
     time_t last_timestamp_sent = 0;
+    size_t last_saved_pages = 0;
+    time_t last_autosave = 0;
 
     while (info->measurement_active && !info->destroying) {
         time_t now = time(NULL);
@@ -1920,7 +2029,31 @@ static gpointer measurement_thread_func(gpointer user_data) {
         }
 
         free_tcp_package(&pkg);
+
+        //3. manage temp-autosave
+        time_t now_tempsave = time(NULL);
+
+        size_t total_floats = info->write_index * (*info->settings->float_number);
+        size_t full_pages = total_floats / floats_per_page;
+
+        // only trigger when a NEW page is completed
+        if (full_pages > last_saved_pages &&
+            difftime(now_tempsave, last_autosave) > 2) {
+
+            last_autosave = now_tempsave;
+
+            if (!info->autosave_pending) {
+                info->autosave_pages_to_write = full_pages;
+                info->autosave_pending = TRUE;
+
+                g_idle_add_full(G_PRIORITY_LOW, autosave_idle_cb, info, NULL);
+
+                last_saved_pages = full_pages;
+            }
+        }
     }
+
+
 
     return NULL;
 }

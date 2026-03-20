@@ -66,6 +66,19 @@ void free_client_info(ClientInfo *info){
     if (info->client_time_sync)
         g_free(info->client_time_sync);
 
+
+    // Free autosave / temp-save data
+    if (info->autosave_filepath) {
+        g_free(info->autosave_filepath);
+        info->autosave_filepath = NULL;
+    }
+
+    // Reset autosave state (not strictly required, but cleaner)
+    info->autosave_initialized = FALSE;
+    info->autosave_pending = FALSE;
+    info->autosave_pages_to_write = 0;
+    info->autosave_last_written_row = 0;
+
     //remove connection statur monitor and syncronize measurement thread
     info->destroying = 1;
     if (info->monitor_id > 0) {

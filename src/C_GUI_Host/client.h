@@ -8,8 +8,7 @@
 
 
 #define MAX_NUM_MESUREMENT_PAGES 12000000
-#define PAGE_SIZE_BYTES (1 << 26) //67.108.864
-
+#define PAGE_SIZE_BYTES (1 << 18) //262144
 
 // --------------------
 // Time synchronization
@@ -48,6 +47,13 @@ typedef struct _ClientInfo{
     uint64_t write_index;           // Current row index
     gboolean measurement_active;    // TRUE after Start, FALSE after stop/end
     GThread *measurement_thread;    // background thread for measurement
+
+    //------------- Temp-Save data ---------------------//
+    uint64_t autosave_last_written_row;
+    gboolean autosave_initialized;
+    gboolean autosave_pending;
+    size_t autosave_pages_to_write;
+    char *autosave_filepath;
 } ClientInfo;
 
 // --------------------
