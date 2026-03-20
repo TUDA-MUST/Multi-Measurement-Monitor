@@ -137,9 +137,9 @@ Client-side interaction is largely handled by the provided Arduino library:
    - Stop measuring on `STOP` packages
 6. Reset the connection after measurement completion
 
-A full basic example is provided under [/basic_complete_example/basic_complete_example.ino](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/blob/main/basic_complete_example/basic_complete_example.ino), while more complex internally used clients are found under [`/examples/`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/tree/main/examples)
+A full basic example is provided under [/basic_complete_example/basic_complete_example.ino](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/blob/main/basic_complete_example/basic_complete_example.ino), while more complex internally used clients are found under [`/clients/`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/tree/main/clients)
 
-The lib, as well as the examples are both written in the Arduino IDE for an ESP32-S3 using 2.4GHz WiFi to connect to a Hotspot running the MMM.
+The lib, as well as the exampleclients are both written in the Arduino IDE for an ESP32-S3 using 2.4GHz WiFi to connect to a Hotspot running the MMM.
 
 ---
 
@@ -154,7 +154,7 @@ Two types of JSON files are used:
 Sent as payload of the `HANDSHAKE` package. Contains:
 
 - `gui_handle` – Client name in GUI and CSV exports 
-- `channel_names` – optional array of Channel names (array size must match float number), fallback to CHANx available  (see [`/examples/HEX32_MMM_Integration/def_settings_config.json`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/blob/main/examples/HEX32_MMM_Integration/def_settings_config.json))
+- `channel_names` – optional array of Channel names (array size must match float number), fallback to CHANx available  (see [`/clients/HEX32_MMM_Integration/def_settings_config.json`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/blob/main/clients/HEX32_MMM_Integration/def_settings_config.json))
 - `float_number` – Number of floats per sample  
   > Includes timestamp (e.g. `4 = 3 channels + 1 timestamp`)  
 - `settings` – Array describing GUI settings
@@ -228,9 +228,9 @@ Sent Timesync request at 2025-12-10 16:50:47.042 UTC, received echo at 2025-12-1
 
 CHAN1;LOCAL_TIME;GLOBAL_TIME
 
-150,695969;17264514,000000;2025-12-10 16:50:37.468385 UTC
+150,695969;17264514,000000;2025-12-10 16:50:37.468385
 
-153,113556;17265606,000000;2025-12-10 16:50:37.469477 UTC
+153,113556;17265606,000000;2025-12-10 16:50:37.469477
 ```
 
 
