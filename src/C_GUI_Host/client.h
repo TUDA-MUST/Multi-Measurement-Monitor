@@ -8,7 +8,7 @@
 
 
 #define MAX_NUM_MESUREMENT_PAGES 12000000
-#define PAGE_SIZE_BYTES (1 << 18) //262144
+#define PAGE_SIZE_BYTES (1 << 19) //524288
 
 // --------------------
 // Time synchronization
