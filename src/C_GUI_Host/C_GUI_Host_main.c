@@ -1,6 +1,7 @@
 //gcc -O3 -ftree-vectorize C_GUI_Host_main.c gui.c client.c network.c settings.c -o MultiMeasurementMonitor -DLINUX `pkg-config --cflags --libs gtk+-3.0 json-glib-1.0` -lm
 // gcc -O3 -ftree-vectorize C_GUI_Host_main.c gui.c client.c network.c settings.c -o ./WinApp/bin/MultiMeasurementMonitor.exe -D_WIN32 -lws2_32 -liphlpapi $(pkg-config --cflags --libs gtk+-3.0 json-glib-1.0)
-
+// DEBUG1: gcc -g -O2 -fno-omit-frame-pointer -DDEBUG C_GUI_Host_main.c gui.c client.c network.c settings.c -o ./WinApp/bin/MultiMeasurementMonitor_debug1.exe -D_WIN32 -lws2_32 -liphlpapi -ldbghelp -Wl,--export-all-symbols $(pkg-config --cflags --libs gtk+-3.0 json-glib-1.0)
+// DEBUG2: gcc -g -O0 -fno-omit-frame-pointer -fsanitize=address -DDEBUG C_GUI_Host_main.c gui.c client.c network.c settings.c -o ./WinApp/bin/MultiMeasurementMonitor_debug2.exe -D_WIN32 -lws2_32 -liphlpapi -ldbghelp $(pkg-config --cflags --libs gtk+-3.0 json-glib-1.0)
 #ifdef _WIN32
     #define _WINSOCK_DEPRECATED_NO_WARNINGS
     #include <winsock2.h>
@@ -27,7 +28,87 @@
 #include <locale.h>
 
 
+// DEBUG TOOLS:
+#ifdef _WIN32
+#include <windows.h>
+#include <dbghelp.h>
 
+#pragma comment(lib, "dbghelp.lib")
+
+static void write_stacktrace(FILE *f)
+{
+    void *stack[100];
+    unsigned short frames = CaptureStackBackTrace(0, 100, stack, NULL);
+
+    HANDLE process = GetCurrentProcess();
+    SymInitialize(process, NULL, TRUE);
+
+    SYMBOL_INFO *symbol = calloc(sizeof(SYMBOL_INFO) + 256, 1);
+    symbol->MaxNameLen = 255;
+    symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+
+    fprintf(f, "\nStack trace:\n");
+
+    for (int i = 0; i < frames; i++) {
+        DWORD64 address = (DWORD64)(stack[i]);
+
+        if (SymFromAddr(process, address, 0, symbol)) {
+            fprintf(f, "%02d: %s - 0x%0llX\n",
+                    i, symbol->Name, symbol->Address);
+        } else {
+            fprintf(f, "%02d: [unknown] - 0x%0llX\n", i, address);
+        }
+    }
+
+    free(symbol);
+}
+
+static void write_minidump(EXCEPTION_POINTERS *ep)
+{
+    HANDLE hFile = CreateFile("crash.dmp", GENERIC_WRITE, 0, NULL,
+                              CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (hFile != INVALID_HANDLE_VALUE) {
+        MINIDUMP_EXCEPTION_INFORMATION info;
+        info.ThreadId = GetCurrentThreadId();
+        info.ExceptionPointers = ep;
+        info.ClientPointers = FALSE;
+
+        MiniDumpWriteDump(GetCurrentProcess(),
+                          GetCurrentProcessId(),
+                          hFile,
+                          MiniDumpNormal,
+                          &info,
+                          NULL,
+                          NULL);
+
+        CloseHandle(hFile);
+    }
+}
+
+LONG WINAPI crash_handler(EXCEPTION_POINTERS *ep)
+{
+    FILE *f = fopen("crash.log", "w");
+
+    if (f) {
+        fprintf(f, "=== CRASH DETECTED ===\n");
+        fprintf(f, "Exception code: 0x%lx\n",
+                ep->ExceptionRecord->ExceptionCode);
+        fprintf(f, "Exception address: %p\n",
+                ep->ExceptionRecord->ExceptionAddress);
+
+        write_stacktrace(f);
+        fclose(f);
+    }
+
+    write_minidump(ep);
+
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+#endif
+
+
+//END OF DEBUG
 
 
 GSocketService *global_service = NULL;
@@ -313,8 +394,14 @@ static void on_close_clicked(GtkButton *button, gpointer user_data)
 
 
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv){
+
+    #ifdef _WIN32
+        #ifdef DEBUG
+        SetUnhandledExceptionFilter(crash_handler);
+        #endif
+    #endif
+
     gtk_init(&argc, &argv);
 
     // Init queue + mutex

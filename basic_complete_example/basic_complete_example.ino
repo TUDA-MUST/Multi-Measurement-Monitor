@@ -6,7 +6,7 @@ The data the programm processes is nonsensical though...
 
 #include <WiFi.h>
 #include <ArduinoJson.h>
-#include "../lib/tcp_client_network.cpp"
+#include "../src/lib/tcp_client_network.cpp"
 
 
 

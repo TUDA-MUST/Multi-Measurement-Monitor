@@ -909,7 +909,7 @@ static void on_export_csv_clicked(GtkButton *button, gpointer user_data) {
             b1 = (Sy * Sxx - Sx * Sxy) / denom;
         }
 
-        printf("Pass 1: a=%.6f, b=%.6f\n", a1, b1);
+        printf("Pass 1: scaling factor a=%.6fµs/s, offset b=%.6fµs\n", a1, b1);
 
 
 
@@ -946,7 +946,7 @@ static void on_export_csv_clicked(GtkButton *button, gpointer user_data) {
             }
         }
 
-        printf("Inliers after IQR filtering (%.2f µs - %.2f µs): %d / %d\n", lower_bound, upper_bound, M, N);
+        printf("Inliers after IQR filtering (between %.2f µs - %.2f µs): %d / %d\n", lower_bound, upper_bound, M, N);
 
 
 
@@ -970,7 +970,67 @@ static void on_export_csv_clicked(GtkButton *button, gpointer user_data) {
             b2 = (Sy2 * Sxx2 - Sx2 * Sxy2) / denom2;
         }
 
-        printf("Pass 2 (final): a=%.6f, b=%.6f\n", a2, b2);
+        printf("Pass 2 (final): a=%.6fµs/s, b=%.6fµs\n", a2, b2);
+
+        /* ============================================================
+        *   R² USING FINAL MODEL (a2, b2)
+        * ============================================================ */
+
+        /* ---------- R² over ALL points (including outliers) ---------- */
+
+        double mean_lt_all = 0.0;
+        for (int i = 0; i < N; i++) {
+            mean_lt_all += lt[i];
+        }
+        mean_lt_all /= N;
+
+        double SS_res_all = 0.0;
+        double SS_tot_all = 0.0;
+
+        for (int i = 0; i < N; i++) {
+            double predicted = a2 * t_mid[i] + b2;
+
+            double diff = lt[i] - predicted;
+            SS_res_all += diff * diff;
+
+            double dev = lt[i] - mean_lt_all;
+            SS_tot_all += dev * dev;
+        }
+
+        double R2_all = (SS_tot_all > 1e-12) ? (1.0 - SS_res_all / SS_tot_all) : 0.0;
+
+        printf("R^2 against second pass  (ALL points) = %.8f\n", R2_all);
+
+
+        /* ---------- R² over INLIERS only ---------- */
+
+        double mean_lt_inliers = 0.0;
+        for (int i = 0; i < N; i++) {
+            if (inlier[i]) {
+                mean_lt_inliers += lt[i];
+            }
+        }
+        mean_lt_inliers /= M;
+
+        double SS_res_in = 0.0;
+        double SS_tot_in = 0.0;
+
+        for (int i = 0; i < N; i++) {
+            if (!inlier[i]) continue;
+
+            double predicted = a2 * t_mid[i] + b2;
+
+            double diff = lt[i] - predicted;
+            SS_res_in += diff * diff;
+
+            double dev = lt[i] - mean_lt_inliers;
+            SS_tot_in += dev * dev;
+        }
+
+        double R2_in = (SS_tot_in > 1e-12) ? (1.0 - SS_res_in / SS_tot_in) : 0.0;
+
+        printf("R^2 against second pass (INLIERS only) = %.8f\n", R2_in);
+
 
         free(inlier);
 
