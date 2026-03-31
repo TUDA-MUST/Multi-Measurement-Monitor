@@ -916,7 +916,7 @@ static void on_export_csv_clicked(GtkButton *button, gpointer user_data) {
         /* ------------------------------------------------------------
         *     IDENTIFY INLIERS USING IQR METHOD (1.5 * IQR)
         * ------------------------------------------------------------ */
-
+        /*
         double *residual = malloc(N * sizeof(double));
 
         for (int i = 0; i < N; i++) {
@@ -947,6 +947,41 @@ static void on_export_csv_clicked(GtkButton *button, gpointer user_data) {
         }
 
         printf("Inliers after IQR filtering (between %.2f µs - %.2f µs): %d / %d\n", lower_bound, upper_bound, M, N);
+        */
+        double *residual = malloc(N * sizeof(double));
+        double *residual_sorted = malloc(N * sizeof(double));
+
+        for (int i = 0; i < N; i++) {
+            double predicted = a1 * t_mid[i] + b1;
+            residual[i] = lt[i] - predicted;
+            residual_sorted[i] = residual[i]; // copy
+        }
+
+        // Sort ONLY the copy
+        qsort(residual_sorted, N, sizeof(double), compare);
+
+        // Quartiles from sorted copy
+        double Q1 = residual_sorted[N / 4];
+        double Q3 = residual_sorted[3 * N / 4];
+        double IQR = Q3 - Q1;
+
+        // Bounds
+        double lower_bound = Q1 - 1.5 * IQR;
+        double upper_bound = Q3 + 1.5 * IQR;
+
+        // Identify inliers using ORIGINAL residuals
+        int *inlier = calloc(N, sizeof(int));
+        int M = 0;
+
+        for (int i = 0; i < N; i++) {
+            if (residual[i] >= lower_bound && residual[i] <= upper_bound) {
+                inlier[i] = 1;
+                M++;
+            }
+        }
+
+        printf("Inliers after IQR filtering (between %.2f µs - %.2f µs): %d / %d\n",
+            lower_bound, upper_bound, M, N);
 
 
 
@@ -975,6 +1010,34 @@ static void on_export_csv_clicked(GtkButton *button, gpointer user_data) {
         /* ============================================================
         *   R² USING FINAL MODEL (a2, b2)
         * ============================================================ */
+
+        /* ---------- R² over IDENTITY ---------- */
+        double SS_res_id = 0.0;
+        double SS_tot_id = 0.0;
+
+        /* Mean of lt (same as before, or reuse if already computed) */
+        double mean_lt = 0.0;
+        for (int i = 0; i < N; i++) {
+            mean_lt += lt[i];
+        }
+        mean_lt /= N;
+
+        for (int i = 0; i < N; i++) {
+            /* Convert midpoint time to µs */
+            double predicted = t_mid[i] * 1e6;
+
+            double diff = lt[i] - predicted;
+            SS_res_id += diff * diff;
+
+            double dev = lt[i] - mean_lt;
+            SS_tot_id += dev * dev;
+        }
+
+        double R2_identity = (SS_tot_id > 1e-12)
+                        ? (1.0 - SS_res_id / SS_tot_id)
+                        : 0.0;
+
+        printf("R^2 IDENTITY (local_time ≈ t_mid_global) = %.8f\n", R2_identity);
 
         /* ---------- R² over ALL points (including outliers) ---------- */
 
@@ -1033,7 +1096,8 @@ static void on_export_csv_clicked(GtkButton *button, gpointer user_data) {
 
 
         free(inlier);
-
+        free(residual);
+        free(residual_sorted);
         // Use a2 and b2 from here on 
 
 

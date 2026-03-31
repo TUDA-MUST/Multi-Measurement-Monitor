@@ -1,8 +1,10 @@
+// configured for continous measurement with MMM_v_1.2.0 onwards
+
 #include <FastLED.h>
 #include <SPI.h>
 #include <pgmspace.h>
 #include <ArduinoJson.h>
-#include "../../lib/tcp_client_network.cpp"
+#include "../../src/lib/tcp_client_network.cpp"
 
 Preferences prefs;
 
@@ -12,7 +14,7 @@ Preferences prefs;
 #define NUM_LEDS 2
 #define DATA_PIN 21
 
-#define ADC_PIN 2        // <<<<<< acquire from this analog pin
+#define ADC_PIN 2        // <<<<<< acquire from this pin
 
 #define BUFFERSIZE 16
 #define SAMPLE_SIZE_BYTES 8      // float value + float timestamp
@@ -75,9 +77,9 @@ uint64_t waitAndApplySettings_simple(WiFiClient &client)
     // --------------------------------------------------
     // Extract settings (with defaults)
     // --------------------------------------------------
-    uint32_t duration_seconds = doc.containsKey("duration_seconds") ? doc["duration_seconds"]: 1;
+    uint32_t duration_seconds =  100;
 
-    uint32_t sample_rate_hz = doc.containsKey("sample_rate_hz") ? doc["sample_rate_hz"]: 1000;
+    uint32_t sample_rate_hz = 1000;
 
     Serial.printf("Settings: %lu Hz, %lu s\n", sample_rate_hz, duration_seconds);
 
@@ -255,7 +257,7 @@ void sendTaskCode(void* params) {
         memcpy(out + 5, buffer, dataSize);
 
         client.write(out, totalOut);
-        sent += BUFFERSIZE;
+        //sent += BUFFERSIZE;
     }
 
     // cleanup
