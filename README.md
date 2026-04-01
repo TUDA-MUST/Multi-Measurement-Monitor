@@ -17,10 +17,14 @@ The **Multi-Measurement-Monitor (MMM)** is a simple-to-use monitoring and synchr
 
 ## 📊 Time Synchronization Example
 
-![Time Synchronization](doc/sync.png)
+<p align="center">
+  <img src="doc/local40min.svg" width="44.5%" />
+  <img src="doc/global40min.svg" width="45%" />
+</p>
 
-Drift of raw local times of ESP32-S3 sync clients recording a 50 Hz digital signal after two hours  
-(left) vs. synchronized global time through MMM (right). This mediates the need for millisecond-precision RTC modules to synchronize sensors.
+
+
+Drift of raw local times of two ESP32-S3 sync clients sampling a 100 Hz digital signal 40 minutes into the measurement at 10,000 samples per second (left) vs. synchronized global time through MMM (right). This mitigates the need for millisecond-precision RTC modules to synchronize sensors to compensate for clock drift.
 
 ---
 

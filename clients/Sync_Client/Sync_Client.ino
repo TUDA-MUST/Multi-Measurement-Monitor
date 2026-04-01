@@ -4,6 +4,7 @@
 #include <SPI.h>
 #include <pgmspace.h>
 #include <ArduinoJson.h>
+#include "driver/gpio.h"
 #include "../../src/lib/tcp_client_network.cpp"
 
 Preferences prefs;
@@ -144,8 +145,8 @@ void IRAM_ATTR fallingWrite_Isr() {
 // continuously capture analog value + timestamp
 // ──────────────────────────────────────────────────────────────
 void aquireTaskCode(void* params) {
-    attachInterrupt(digitalPinToInterrupt(ADC_PIN), risingWrite_Isr, RISING);
-    attachInterrupt(digitalPinToInterrupt(ADC_PIN), fallingWrite_Isr, FALLING);
+    //attachInterrupt(digitalPinToInterrupt(ADC_PIN), risingWrite_Isr, RISING);
+    //attachInterrupt(digitalPinToInterrupt(ADC_PIN), fallingWrite_Isr, FALLING);
     while (1) {
         Sample* s = (Sample*) malloc(sizeof(Sample));
         if (s) {
@@ -154,7 +155,11 @@ void aquireTaskCode(void* params) {
             s->timestamp = (float)esp_timer_get_time();  // Get timestamp in microseconds
             xQueueSend(datatransferQueue, &s, 0);
         }
-        vTaskDelay(2);   // adjust sampling speed
+        //vTaskDelay(2);   // adjust sampling speed
+        unsigned long start = micros();
+        while (micros() - start < 100) {
+        // wait 100 µs
+        }
     }
 }
 
