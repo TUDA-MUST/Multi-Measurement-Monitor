@@ -1,5 +1,5 @@
 //gcc -O3 -ftree-vectorize C_GUI_Host_main.c gui.c client.c network.c settings.c -o MultiMeasurementMonitor -DLINUX `pkg-config --cflags --libs gtk+-3.0 json-glib-1.0` -lm
-// gcc -O3 -ftree-vectorize C_GUI_Host_main.c gui.c client.c network.c settings.c -o ./WinApp/bin/MultiMeasurementMonitor.exe -D_WIN32 -lws2_32 -liphlpapi $(pkg-config --cflags --libs gtk+-3.0 json-glib-1.0)
+// gcc -O3 -ftree-vectorize -DDEBUG C_GUI_Host_main.c gui.c client.c network.c settings.c -o ./WinApp/bin/MultiMeasurementMonitor.exe -D_WIN32 -lws2_32 -liphlpapi -ldbghelp $(pkg-config --cflags --libs gtk+-3.0 json-glib-1.0)
 // DEBUG1: gcc -g -O2 -fno-omit-frame-pointer -DDEBUG C_GUI_Host_main.c gui.c client.c network.c settings.c -o ./WinApp/bin/MultiMeasurementMonitor_debug1.exe -D_WIN32 -lws2_32 -liphlpapi -ldbghelp -Wl,--export-all-symbols $(pkg-config --cflags --libs gtk+-3.0 json-glib-1.0)
 // DEBUG2: gcc -g -O0 -fno-omit-frame-pointer -fsanitize=address -DDEBUG C_GUI_Host_main.c gui.c client.c network.c settings.c -o ./WinApp/bin/MultiMeasurementMonitor_debug2.exe -D_WIN32 -lws2_32 -liphlpapi -ldbghelp $(pkg-config --cflags --libs gtk+-3.0 json-glib-1.0)
 #ifdef _WIN32
@@ -30,6 +30,7 @@
 
 // DEBUG TOOLS:
 #ifdef _WIN32
+#ifdef DEBUG
 #include <windows.h>
 #include <dbghelp.h>
 
@@ -105,6 +106,7 @@ LONG WINAPI crash_handler(EXCEPTION_POINTERS *ep)
 
     return EXCEPTION_EXECUTE_HANDLER;
 }
+#endif
 #endif
 
 

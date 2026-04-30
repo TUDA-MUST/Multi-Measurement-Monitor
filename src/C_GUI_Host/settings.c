@@ -875,7 +875,7 @@ uint32_t get_sample_rate(GuiConfig *config) {
         }
     }
 
-    g_warning("sample_rate_hz setting not found in get_sample_rate()");
+    //g_warning("sample_rate_hz setting not found in get_sample_rate()");
     return 0;
 }
 

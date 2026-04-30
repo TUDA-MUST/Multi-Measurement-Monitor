@@ -640,7 +640,7 @@ gboolean on_client_incoming(GSocketService *service,
 
     //Read the first package ---
     TcpPackage pkg;
-    gboolean ok = get_next_tcp_package(sock, &pkg, 800); // 800 ms timeout (long value neccesary for WINDOWS)
+    gboolean ok = get_next_tcp_package(sock, &pkg, 8000); // 800 ms timeout (long value neccesary for WINDOWS)
     if (!ok) {
         g_warning("Handshake timed out, keeping connection open and trying anyway");
         return FALSE;
@@ -1207,7 +1207,7 @@ static void on_export_csv_clicked(GtkButton *button, gpointer user_data) {
          *   GLOBAL_TIME = ( (local_time - b) / a ) + t0_sec
          *   Format: YYYY-MM-DD HH:MM:SS.mmm UTC
          * ============================================================ */
-        for (uint64_t i = 0; i < client->write_index / *client->settings->float_number; i++) {
+        for (uint64_t i = 0; i < client->write_index; i++) {
             // Print measurement values
             for (int j = 0; j < *client->settings->float_number; j++) {
                 fprintf(fp, "%.6f", get_measurement(client, i, j));
@@ -1697,6 +1697,7 @@ static gboolean on_plot_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data)
     const gint64 AUTOSCALE_INTERVAL_US = 800 * G_TIME_SPAN_MILLISECOND; // 800 ms
 
     uint64_t max_history_rows = PLOT_HISTORY * get_sample_rate(info->settings);
+    if(max_history_rows == 0) max_history_rows = PLOT_HISTORY * 1000;
     uint64_t start = (info->write_index > max_history_rows) ? (info->write_index - max_history_rows) : 0;
     uint64_t count = info->write_index - start;
 

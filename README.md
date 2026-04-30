@@ -24,7 +24,7 @@ The **Multi-Measurement-Monitor (MMM)** is a simple-to-use monitoring and synchr
 
 
 
-Drift of raw local times of two ESP32-S3 sync clients sampling a 100 Hz digital signal 40 minutes into the measurement at 10,000 samples per second (left) vs. synchronized global time through MMM (right). This mitigates the need for millisecond-precision RTC modules to synchronize sensors to compensate for clock drift.
+Drift of raw local times of two ESP32-S3 sync clients sampling a 100 Hz digital signal 40 minutes into the measurement at 4,000 samples per second (left) vs. synchronized global time through MMM (right) over a 20 ms window. The software solution mitigates the need for millisecond-precision RTC modules to synchronize sensors to compensate for clock drift, which could be up to 290ms per hour in the worst case scenario for clocks with +/-40ppm precision.
 
 ---
 
