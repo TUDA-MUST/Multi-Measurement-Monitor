@@ -425,6 +425,7 @@ int main(int argc, char **argv){
 
     // Notebook container
     GtkWidget *notebook = gtk_notebook_new();
+    gtk_notebook_set_scrollable(GTK_NOTEBOOK(notebook), TRUE);
     gtk_container_add(GTK_CONTAINER(win), notebook);
 
     //

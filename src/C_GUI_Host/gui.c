@@ -604,7 +604,7 @@ static void on_stop_btn_clicked(GtkButton *button, gpointer user_data) {
         g_warning("Stop button widget not found for this tab");
     }
     
-    //disconnect_client(info);
+    disconnect_client(info);
 
     g_message("Measurement stopped by user.");
 }
@@ -791,6 +791,12 @@ static int compare(const void *a, const void *b) {
 //---------------EXPORT MEASUREMENT TO CSV WITH GLOBAL UTC TIME--------------------
 static void on_export_csv_clicked(GtkButton *button, gpointer user_data) {
     ClientInfo *client = (ClientInfo *)user_data;
+
+    if(client->conn){
+        g_warning("Client still connected try again to export data after disconnect is complete.\n");
+        return;
+    }
+
 
     if (!client->measurement_data || client->write_index == 0) {
         g_print("No measurement data available.\n");
