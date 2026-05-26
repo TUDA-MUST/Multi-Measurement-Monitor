@@ -126,7 +126,7 @@ Available actions:
 
 Client-side interaction is largely handled by the provided Arduino library:
 
-[`/lib/tcp_client_network.h`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/tree/main/lib)
+[`/src/lib/tcp_client_network.h`](https://github.com/TUDA-MUST/Multi-Measurement-Monitor/tree/main/src/lib)
 
 
 ### Required Client Workflow
