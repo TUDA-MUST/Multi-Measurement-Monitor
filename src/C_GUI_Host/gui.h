@@ -34,6 +34,7 @@ static void on_send_btn_clicked(GtkButton *button, gpointer user_data);
 static void on_stop_btn_clicked(GtkButton *button, gpointer user_data);
 gboolean on_client_incoming(GSocketService *service, GSocketConnection *conn, GObject *src, gpointer user_data);
 static void on_export_csv_clicked(GtkButton *button, gpointer user_data);
+static void toggle_visible_channels(GtkButton *button, gpointer user_data);
 static gboolean on_plot_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data);
 
 // --------------------

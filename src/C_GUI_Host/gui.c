@@ -254,6 +254,11 @@ void build_client_ui(ClientInfo *info, GtkWidget *win)
   gtk_box_pack_start(GTK_BOX(right_box), fast_draw_check, FALSE, FALSE, 5);
   g_object_set_data(G_OBJECT(info->tab_content), "fast_draw_check", fast_draw_check);
 
+  // --- Toggle all plotted channels ---
+  GtkWidget *toggle_all_btn = gtk_button_new_with_label("Toggle visible channels");
+  gtk_box_pack_start(GTK_BOX(right_box), toggle_all_btn, FALSE, FALSE, 5);
+  g_signal_connect(toggle_all_btn, "clicked", G_CALLBACK(toggle_visible_channels), info->tab_content);
+
   // --- Channel Tick-boxes ---
   if (info->settings && *(info->settings->float_number) > 1) {
       guint num_chans = *(info->settings->float_number) - 1;
@@ -1310,6 +1315,37 @@ static void on_export_csv_clicked(GtkButton *button, gpointer user_data) {
 
 
 
+
+
+
+
+// helper function to toggle all plotted channels
+
+static void toggle_visible_channels(GtkButton *button, gpointer user_data){
+    GtkWidget *tab_content = GTK_WIDGET(user_data);
+
+    GtkWidget **buttons = (GtkWidget **)g_object_get_data(G_OBJECT(tab_content), "chan_checkbuttons");
+
+    guint num = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(tab_content), "num_chans"));
+
+    for (guint i = 0; i < num; i++) {
+        GtkToggleButton *toggle = GTK_TOGGLE_BUTTON(buttons[i]);
+
+        gboolean current = gtk_toggle_button_get_active(toggle);
+
+        gtk_toggle_button_set_active(toggle, !current);
+    }
+}
+
+
+
+
+
+
+
+
+
+
 // function to autoscale ymin/ ymax 
 //---------------AUTOSCALE Y-MIN/Y-MAX FOR PAGED BUFFER-----------------
 static gboolean compute_autoscale_y_range(ClientInfo *info, uint64_t start, uint64_t count, double *out_ymin, double *out_ymax)
@@ -1366,65 +1402,10 @@ static gboolean compute_autoscale_y_range(ClientInfo *info, uint64_t start, uint
     return TRUE;
 }
 
-/*
-static gboolean compute_autoscale_y_range(ClientInfo *info, uint64_t start, uint64_t count, double *out_ymin, double *out_ymax){
-    if (!info || !info->measurement_data || count == 0)
-        return FALSE;
 
-    GtkWidget *tab = info->tab_content;
 
-    GtkWidget **chan_checkbuttons = g_object_get_data(G_OBJECT(tab), "chan_checkbuttons");
 
-    guint num_floats = *info->settings->float_number;
-    float **buf = info->measurement_data;
 
-    double ymin = G_MAXDOUBLE;
-    double ymax = -G_MAXDOUBLE;
-    gboolean found = FALSE;
-
-    for (uint64_t i = 0; i < count; i++) {
-        uint64_t base = (start + i) * num_floats;
-
-        for (guint ch = 0; ch < num_floats - 1; ch++) {
-
-            if (chan_checkbuttons &&
-                !gtk_toggle_button_get_active(
-                    GTK_TOGGLE_BUTTON(chan_checkbuttons[ch])))
-                continue;
-
-            double v = buf[base + ch];
-
-            if (v < ymin) ymin = v;
-            if (v > ymax) ymax = v;
-            found = TRUE;
-        }
-    }
-
-    if (!found || ymin == ymax)
-        return FALSE;
-
-    / add 10% padding 
-    double pad = 0.1 * (ymax - ymin);
-    if (pad <= 0) pad = 1.0;
-
-    ymin -= pad;
-    ymax += pad;
-
-    /=======================================================
-       COMMENT / UNCOMMENT THE NEXT LINE FOR EXPAND-ONLY MODE
-       ======================================================= /
-    /EXPAND_ONLY_AUTOSCALE /
-    if (out_ymin && out_ymax) {
-        ymin = MIN(ymin, *out_ymin);
-        ymax = MAX(ymax, *out_ymax);
-    }
-
-    *out_ymin = ymin;
-    *out_ymax = ymax;
-
-    return TRUE;
-}
-*/
 
 
 
@@ -1442,232 +1423,9 @@ static void draw_text(cairo_t *cr, double x, double y, const char *txt){
 
 
 
-/*
-//function to draw a live plot of measurements
-static gboolean on_plot_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data)
-{
-    ClientInfo *info = (ClientInfo *)user_data;
-    if (!info || !info->measurement_data) return FALSE;
-
-    uint64_t total = info->write_index;
-    if (total == 0) return FALSE;
-
-    GtkWidget *tab = info->tab_content;
-    GtkWidget *ymin_entry = g_object_get_data(G_OBJECT(tab), "ymin_entry");
-    GtkWidget *ymax_entry = g_object_get_data(G_OBJECT(tab), "ymax_entry");
-
-    // fallback defaults
-    double y_min = -2500.0;
-    double y_max =  2500.0;
-
-    if (ymin_entry && ymax_entry) {
-        const char *smin = gtk_entry_get_text(GTK_ENTRY(ymin_entry));
-        const char *smax = gtk_entry_get_text(GTK_ENTRY(ymax_entry));
-        double vmin = atof(smin);
-        double vmax = atof(smax);
-
-        if (vmax > vmin) {        // valid range
-            y_min = vmin;
-            y_max = vmax;
-        }
-    }
-
-
-    static gint64 last_autoscale_us = 0;
-    const gint64 AUTOSCALE_INTERVAL_US = 800 * G_TIME_SPAN_MILLISECOND; // 800 ms
-
-    uint64_t start = (total > PLOT_HISTORY * get_sample_rate(info->settings)) ? (total - PLOT_HISTORY * get_sample_rate(info->settings)) : 0;
-    uint64_t count = total - start;
-
-    // autoscale override 
-    GtkWidget *autoscale_check = g_object_get_data(G_OBJECT(tab), "autoscale_check");
-    gboolean autoscale_enabled = FALSE;
-
-    if (autoscale_check) {
-        autoscale_enabled = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(autoscale_check));
-        // Disable manual Y range entries when autoscale is on 
-        if (ymin_entry) gtk_widget_set_sensitive(ymin_entry, !autoscale_enabled);
-        if (ymax_entry) gtk_widget_set_sensitive(ymax_entry, !autoscale_enabled);
-    
-        if (autoscale_enabled) {
-            gint64 now = g_get_monotonic_time();
-            if (now - last_autoscale_us >= AUTOSCALE_INTERVAL_US) {
-                compute_autoscale_y_range(info, start, count, &y_min, &y_max);
-                // write back to entries 
-                if (ymin_entry && ymax_entry) {
-                    char buf_min[32];
-                    char buf_max[32];
-                    g_snprintf(buf_min, sizeof(buf_min), "%.1f", y_min);
-                    g_snprintf(buf_max, sizeof(buf_max), "%.1f", y_max);
-                    gtk_entry_set_text(GTK_ENTRY(ymin_entry), buf_min);
-                    gtk_entry_set_text(GTK_ENTRY(ymax_entry), buf_max);
-                }
-                last_autoscale_us = now;
-            }
-        }
-    }
 
 
 
-    GtkAllocation alloc;
-    gtk_widget_get_allocation(widget, &alloc);
-    double W = alloc.width;
-    double H = alloc.height;
-
-    float *buf = info->measurement_data;
-
-    // === BACKGROUND === 
-    cairo_set_source_rgb(cr, 0, 0, 0);
-    cairo_paint(cr);
-
-    // === DRAW AXES === 
-    cairo_set_source_rgb(cr, 1, 1, 1);
-    cairo_set_line_width(cr, 1.0);
-
-    // X-axis (bottom)
-    double x_axis_y = H - 30;   // leave space for labels
-    cairo_move_to(cr, 40, x_axis_y);
-    cairo_line_to(cr, W - 10, x_axis_y);
-    cairo_stroke(cr);
-
-    // Y-axis (left)
-    double y_axis_x = 40;
-    cairo_move_to(cr, y_axis_x, 10);
-    cairo_line_to(cr, y_axis_x, H - 30);
-    cairo_stroke(cr);
-
-    cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-    cairo_set_font_size(cr, 12);
-
-    // === TIME RANGE === 
-    double t_start = buf[start * (*info->settings->float_number) + (*info->settings->float_number)-1] / 1e6;
-    double t_end   = buf[(total - 1) * (*info->settings->float_number) + (*info->settings->float_number)-1] / 1e6;
-    double t_range = t_end - t_start;
-
-    if (t_range <= 0) t_range = 1e-9;
-
-    // === DRAW X TICKS === 
-    int num_xticks = 10;
-    for (int i = 0; i <= num_xticks; i++) {
-        double t = t_start + (i * t_range / num_xticks);
-        double x = y_axis_x + (i * (W - y_axis_x - 10) / num_xticks);
-
-        cairo_move_to(cr, x, x_axis_y);
-        cairo_line_to(cr, x, x_axis_y + 5);
-        cairo_stroke(cr);
-
-        char label[32];
-        snprintf(label, sizeof(label), "%.2f", t);
-        draw_text(cr, x, x_axis_y + 10, label);
-    }
-
-    // === DRAW Y TICKS === 
-    int num_yticks = 10;
-    double y_range = y_max - y_min;
-    for (int i = 0; i <= num_yticks; i++) {
-        double mv = y_min + (i * y_range / num_yticks);
-        double y = x_axis_y - ( (mv - y_min) * (x_axis_y - 10) / y_range );
-
-        cairo_move_to(cr, y_axis_x - 5, y);
-        cairo_line_to(cr, y_axis_x, y);
-        cairo_stroke(cr);
-
-        char label[32];
-        snprintf(label, sizeof(label), "%.0f", mv);
-        cairo_move_to(cr, 5, y + 4);
-        cairo_show_text(cr, label);
-    }
-
-
-
-    // === DRAW CHANNELS === 
-    GtkWidget **chan_checkbuttons = g_object_get_data(G_OBJECT(tab), "chan_checkbuttons");
-    for (int ch = 0; ch < (*info->settings->float_number)-1; ch++) {
-
-        // Skip channels with unchecked boxes
-        if (!chan_checkbuttons || !gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(chan_checkbuttons[ch]))) {
-            continue;
-        }
-
-        uint8_t ch_clr = ch%32;
-        cairo_set_source_rgb(cr, colors[ch_clr][0], colors[ch_clr][1], colors[ch_clr][2]);
-        cairo_set_line_width(cr, 1.2);
-
-        gboolean first = TRUE;
-        GtkWidget *fast_draw_check = g_object_get_data(G_OBJECT(info->tab_content), "fast_draw_check");
-
-        gboolean fast_mode = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(fast_draw_check));
-        if(!fast_mode){
-            for (uint64_t i = 0; i < count; i++) {
-                uint64_t idx = (start + i) * (*info->settings->float_number);
-
-                float v_mV = buf[idx + ch];
-                double t_sec = buf[idx + (*info->settings->float_number)-1] / 1e6;
-
-                // convert to plot coords
-                double x = y_axis_x + ( (t_sec - t_start) / t_range ) * (W - y_axis_x - 10 );
-                double y = x_axis_y - ( (v_mV - y_min) / y_range ) * (x_axis_y - 10);
-
-                if (first) {
-                    cairo_move_to(cr, x, y);
-                    first = FALSE;
-                } else {
-                    cairo_line_to(cr, x, y);
-                }
-            }
-        }else{
-            double plot_x0 = y_axis_x;
-            double plot_x1 = W - 10;
-            int plot_width_px = (int)(plot_x1 - plot_x0);
-
-            if (plot_width_px <= 1)
-                continue;  // skip tiny plot
-
-            uint64_t samples_per_pixel = count / plot_width_px;
-            if (samples_per_pixel < 1)
-                samples_per_pixel = 1;
-
-            double x_scale = (plot_x1 - plot_x0) / (double)plot_width_px;
-            double y_scale = (x_axis_y - 10) / (y_max - y_min);
-
-            for (int px = 0; px < plot_width_px; px++) {
-                uint64_t i0 = start + (uint64_t)px * samples_per_pixel;
-                uint64_t i1 = i0 + samples_per_pixel;
-                if (i1 > total)
-                    i1 = total;
-
-                float vmin =  FLT_MAX;
-                float vmax = -FLT_MAX;
-
-                for (uint64_t i = i0; i < i1; i++) {
-                    uint64_t idx = i * (*info->settings->float_number);
-                    float v = buf[idx + ch];
-
-                    if (v < vmin) vmin = v;
-                    if (v > vmax) vmax = v;
-                }
-
-                if (vmin > vmax) // nothing in this pixel
-                    continue;
-
-                double x = plot_x0 + px * x_scale;
-                double y1 = x_axis_y - (vmin - y_min) * y_scale;
-                double y2 = x_axis_y - (vmax - y_min) * y_scale;
-
-                cairo_move_to(cr, x, y1);
-                cairo_line_to(cr, x, y2);
-            }
-        }
-        cairo_stroke(cr);
-        
-
-    }
-
-    return FALSE;
-}
-
-
-*/
 
 
 //---------------LIVE PLOT DRAW FOR PAGED MEASUREMENT BUFFER-----------------
