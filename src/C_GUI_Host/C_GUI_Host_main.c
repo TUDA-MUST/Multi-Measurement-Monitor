@@ -1,7 +1,6 @@
 //gcc -O3 -ftree-vectorize C_GUI_Host_main.c gui.c client.c network.c settings.c -o MultiMeasurementMonitor -DLINUX `pkg-config --cflags --libs gtk+-3.0 json-glib-1.0` -lm
 // gcc -O3 -ftree-vectorize -DDEBUG C_GUI_Host_main.c gui.c client.c network.c settings.c -o ./WinApp/bin/MultiMeasurementMonitor.exe -D_WIN32 -lws2_32 -liphlpapi -ldbghelp $(pkg-config --cflags --libs gtk+-3.0 json-glib-1.0)
-// DEBUG1: gcc -g -O2 -fno-omit-frame-pointer -DDEBUG C_GUI_Host_main.c gui.c client.c network.c settings.c -o ./WinApp/bin/MultiMeasurementMonitor_debug1.exe -D_WIN32 -lws2_32 -liphlpapi -ldbghelp -Wl,--export-all-symbols $(pkg-config --cflags --libs gtk+-3.0 json-glib-1.0)
-// DEBUG2: gcc -g -O0 -fno-omit-frame-pointer -fsanitize=address -DDEBUG C_GUI_Host_main.c gui.c client.c network.c settings.c -o ./WinApp/bin/MultiMeasurementMonitor_debug2.exe -D_WIN32 -lws2_32 -liphlpapi -ldbghelp $(pkg-config --cflags --libs gtk+-3.0 json-glib-1.0)
+
 #ifdef _WIN32
     #define _WINSOCK_DEPRECATED_NO_WARNINGS
     #include <winsock2.h>
@@ -251,7 +250,7 @@ static uint32_t detect_hotspot_ip(){
                 if (!is_private_ip(ip)) continue;
 
                 // Skip VirtualBox 192.168.56.x
-                if ((ip & 0xFFFF0000) == 0xC0A83800) continue; // 192.168.56.0/24
+                if ((ip & 0xFFFFFF00) == 0xC0A83800) continue; // 192.168.56.0/24
 
                 char buf[32];
                 inet_ntop(AF_INET, &sa->sin_addr, buf, sizeof(buf));
