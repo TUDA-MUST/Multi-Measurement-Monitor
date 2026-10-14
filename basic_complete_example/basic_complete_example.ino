@@ -54,6 +54,7 @@ void waitAndApplySettings(WiFiClient &client){
     TcpPackage pkg;
     pkg.package_type = PING_PACKAGE;
 
+    // pulling for settings, measurement start after
     while (pkg.package_type != SETTINGS_PACKAGE)
         getNextTcpPackage(client, pkg);
 
